@@ -18,18 +18,7 @@ const (
 	defaultOutputConfigLoader = "config_gen.go"
 )
 
-func pkgForParseFunc(fn string) string {
-	switch {
-	case strings.HasPrefix(fn, "strconv."):
-		return `"strconv"`
-	case fn == "time.ParseDuration":
-		return `"time"`
-	default:
-		return ""
-	}
-}
-
-type Field struct {
+type TemplateData struct {
 	Name      string
 	EnvVar    string
 	Type      string
@@ -48,18 +37,10 @@ func GenerateConfigLoader(configStructName, inputFile, outputLoader, outputDoten
 		`"strings"`: {},
 	}
 
-	var prefix string
-	if len(os.Args) > 1 {
-		prefix = os.Args[1]
-	} else {
-		cwd, err := os.Getwd()
-		if err != nil {
-			panic(err)
-		}
-		base := filepath.Base(cwd)
-		prefix = base
+	prefix, err := getProjectNamePrefix()
+	if err != nil {
+		panic(err)
 	}
-	prefix = strings.ToUpper(prefix)
 	fmt.Printf("using project name prefix %s\n", prefix)
 
 	// Parse config.go
@@ -69,7 +50,7 @@ func GenerateConfigLoader(configStructName, inputFile, outputLoader, outputDoten
 		panic(err)
 	}
 
-	var fields []Field
+	var fields []TemplateData
 
 	for _, decl := range node.Decls {
 
@@ -104,7 +85,7 @@ func GenerateConfigLoader(configStructName, inputFile, outputLoader, outputDoten
 					// same type declared on the same line
 					for _, n := range f.Names {
 						name := n.Name
-						typ := exprToString(f.Type)
+						typ := convertTypeIdentifierToString(f.Type)
 						envKey := prefix + "_" + strings.ToUpper(snakeCase(name))
 
 						parseFunc, formatErr, bitSize, castFunc, ok := lookupParseFunc(typ)
@@ -116,7 +97,7 @@ func GenerateConfigLoader(configStructName, inputFile, outputLoader, outputDoten
 							imports[p] = struct{}{}
 						}
 
-						fields = append(fields, Field{
+						fields = append(fields, TemplateData{
 							Name:      name,
 							EnvVar:    envKey,
 							Type:      typ,
@@ -148,7 +129,7 @@ func GenerateConfigLoader(configStructName, inputFile, outputLoader, outputDoten
 	goTemplate.Execute(outGo, struct {
 		Prefix       string
 		StructName   string
-		Fields       []Field
+		Fields       []TemplateData
 		TestBuildTag string
 		ImportList   string
 	}{
@@ -179,12 +160,28 @@ func main() {
 	}
 }
 
-func exprToString(expr ast.Expr) string {
+func getProjectNamePrefix() (string, error) {
+	var prefix string
+	if len(os.Args) > 1 {
+		prefix = os.Args[1]
+	} else {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", fmt.Errorf("cannot get working directory: %w", err)
+		}
+		base := filepath.Base(cwd)
+		prefix = base
+	}
+	prefix = strings.ToUpper(prefix)
+	return prefix, nil
+}
+
+func convertTypeIdentifierToString(expr ast.Expr) string {
 	switch t := expr.(type) {
 	case *ast.Ident:
 		return t.Name
 	case *ast.SelectorExpr:
-		return exprToString(t.X) + "." + t.Sel.Name
+		return convertTypeIdentifierToString(t.X) + "." + t.Sel.Name
 	default:
 		panic("expected identifier or selector expression")
 	}
@@ -201,7 +198,7 @@ func snakeCase(in string) string {
 	return strings.ToLower(string(out))
 }
 
-func lookupParseFunc(typ string) (parseFunc string, formatErr bool, bitSize int, castFunc string, ok bool) {
+func lookupParseFunc(typ string) (parseFunc string, canHaveFormatErr bool, bitSize int, castFuncForIntAndFloat string, ok bool) {
 	switch typ {
 	case "string":
 		return "raw", false, 0, "", true
@@ -240,6 +237,17 @@ func lookupParseFunc(typ string) (parseFunc string, formatErr bool, bitSize int,
 
 	default:
 		return "", false, 0, "", false
+	}
+}
+
+func pkgForParseFunc(fn string) string {
+	switch {
+	case strings.HasPrefix(fn, "strconv."):
+		return `"strconv"`
+	case fn == "time.ParseDuration":
+		return `"time"`
+	default:
+		return ""
 	}
 }
 

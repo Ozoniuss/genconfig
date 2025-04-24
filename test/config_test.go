@@ -133,3 +133,40 @@ func TestGeneratedConfigFloats(t *testing.T) {
 		t.Errorf("float64 mismatch: got %f, want %f", actual.Float64Val, expected.Float64Val)
 	}
 }
+
+// type Nested struct {
+// 	NestedField string
+// 	Inner       struct {
+// 		Enabled bool
+// 	}
+// }
+
+// type TestConfigNested struct {
+// 	AppName string
+// 	Nested  Nested
+// }
+
+// func TestGeneratedConfigNested(t *testing.T) {
+// 	t.Setenv("TEST_APP_NAME", "NestedApp")
+// 	t.Setenv("TEST_NESTED_NESTED_FIELD", "hello")
+// 	t.Setenv("TEST_NESTED_INNER_ENABLED", "true")
+
+// 	expected := TestConfigNested{
+// 		AppName: "NestedApp",
+// 		Nested: Nested{
+// 			NestedField: "hello",
+// 			Inner: struct{ Enabled bool }{
+// 				Enabled: true,
+// 			},
+// 		},
+// 	}
+
+// 	actual, err := LoadTestConfigNested()
+// 	if err != nil {
+// 		t.Fatalf("expected no error, got: %s", err)
+// 	}
+
+// 	if expected != actual {
+// 		t.Fatalf("expected: %+v, got: %+v", expected, actual)
+// 	}
+// }
