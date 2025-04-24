@@ -1,6 +1,6 @@
 //go:generate bash -c "go run configgen.go --project=myapp"
 
-package genconfig
+package example
 
 import "time"
 
