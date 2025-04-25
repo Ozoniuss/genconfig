@@ -31,17 +31,13 @@ type TemplateData struct {
 
 func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoader, outputDotenv string, generateEnv bool, testBuildTag string) error {
 
-	var imports = map[string]struct{}{ // grows as we inspect fields
-		`"fmt"`:     {}, // always needed
-		`"os"`:      {},
-		`"strings"`: {},
-	}
-
 	prefix, err := getProjectNamePrefix(projectPrefix)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Printf("using project name prefix %s\n", prefix)
+
+	outputImports := setupImportsAlwaysNeeded()
 
 	// Parse config.go
 	fset := token.NewFileSet()
@@ -63,8 +59,7 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoad
 
 		for _, spec := range gen.Specs {
 			ts, ok := spec.(*ast.TypeSpec)
-			// must be struct named explicitly "Config". This is a constraint of
-			// the generator
+
 			if !ok || ts.Name.Name != configStructName {
 				continue
 			}
@@ -94,7 +89,7 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoad
 						}
 
 						if p := pkgForParseFunc(parseFunc); p != "" {
-							imports[p] = struct{}{}
+							outputImports[p] = struct{}{}
 						}
 
 						fields = append(fields, TemplateData{
@@ -116,16 +111,12 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoad
 		}
 	}
 
-	pkgs := make([]string, 0, len(imports))
-	for p := range imports {
-		pkgs = append(pkgs, p)
-	}
-	slices.Sort(pkgs) // Go 1.21+
-	importList := strings.Join(pkgs, "\n    ")
+	importList := generateImportsListAsTemplateString(outputImports)
 
 	// Generate config_gen.go
 	outGo, _ := os.Create(outputLoader)
 	defer outGo.Close()
+
 	goTemplate.Execute(outGo, struct {
 		Prefix       string
 		StructName   string
@@ -158,6 +149,25 @@ func main() {
 		fmt.Printf("failed to generate config: %v", err.Error())
 		os.Exit(1)
 	}
+}
+
+func setupImportsAlwaysNeeded() map[string]struct{} {
+	return map[string]struct{}{
+		`"fmt"`:     {},
+		`"os"`:      {},
+		`"strings"`: {},
+	}
+
+}
+
+func generateImportsListAsTemplateString(outputImports map[string]struct{}) string {
+	pkgs := make([]string, 0, len(outputImports))
+	for p := range outputImports {
+		pkgs = append(pkgs, p)
+	}
+	slices.Sort(pkgs) // Go 1.21+
+	importList := strings.Join(pkgs, "\n    ")
+	return importList
 }
 
 func getProjectNamePrefix(suppliedPrefix string) (string, error) {
