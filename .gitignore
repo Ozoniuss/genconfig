@@ -26,3 +26,6 @@ go.work.sum
 
 # generated test files
 test/c[0-9]*.go
+
+
+.vscode

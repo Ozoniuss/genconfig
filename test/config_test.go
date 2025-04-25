@@ -17,10 +17,10 @@ type TestConfig1 struct {
 
 func TestGeneratedConfig1(t *testing.T) {
 
-	t.Setenv("TEST_APP_NAME", "SuperApp")
-	t.Setenv("TEST_DEBUG", "true")
-	t.Setenv("TEST_TIMEOUT", "5s")
-	t.Setenv("TEST_RETRIES", "3")
+	t.Setenv("TESTCONFIG1_APP_NAME", "SuperApp")
+	t.Setenv("TESTCONFIG1_DEBUG", "true")
+	t.Setenv("TESTCONFIG1_TIMEOUT", "5s")
+	t.Setenv("TESTCONFIG1_RETRIES", "3")
 
 	expected := TestConfig1{
 		AppName: "SuperApp",
@@ -47,10 +47,10 @@ type TestConfigInts struct {
 }
 
 func TestGeneratedConfigInts(t *testing.T) {
-	t.Setenv("TEST_INT8_VAL", "8")
-	t.Setenv("TEST_INT16_VAL", "1600")
-	t.Setenv("TEST_INT32_VAL", "320000")
-	t.Setenv("TEST_INT64_VAL", "6400000000")
+	t.Setenv("TESTCONFIGINTS_INT8_VAL", "8")
+	t.Setenv("TESTCONFIGINTS_INT16_VAL", "1600")
+	t.Setenv("TESTCONFIGINTS_INT32_VAL", "320000")
+	t.Setenv("TESTCONFIGINTS_INT64_VAL", "6400000000")
 
 	expected := TestConfigInts{
 		Int8Val:  8,
@@ -85,10 +85,10 @@ type TestConfigUints struct {
 }
 
 func TestGeneratedConfigUints(t *testing.T) {
-	t.Setenv("TEST_UINT8_VAL", "8")
-	t.Setenv("TEST_UINT16_VAL", "1600")
-	t.Setenv("TEST_UINT32_VAL", "320000")
-	t.Setenv("TEST_UINT64_VAL", "6400000000")
+	t.Setenv("TESTCONFIGUINTS_UINT8_VAL", "8")
+	t.Setenv("TESTCONFIGUINTS_UINT16_VAL", "1600")
+	t.Setenv("TESTCONFIGUINTS_UINT32_VAL", "320000")
+	t.Setenv("TESTCONFIGUINTS_UINT64_VAL", "6400000000")
 
 	expected := TestConfigUints{
 		Uint8Val:  8,
@@ -112,8 +112,8 @@ type TestConfigFloats struct {
 }
 
 func TestGeneratedConfigFloats(t *testing.T) {
-	t.Setenv("TEST_FLOAT32_VAL", "1.23")
-	t.Setenv("TEST_FLOAT64_VAL", "3.1415")
+	t.Setenv("TESTCONFIGFLOATS_FLOAT32_VAL", "1.23")
+	t.Setenv("TESTCONFIGFLOATS_FLOAT64_VAL", "3.1415")
 
 	expected := TestConfigFloats{
 		Float32Val: 1.23,

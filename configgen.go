@@ -29,7 +29,7 @@ type TemplateData struct {
 	CastFunc  string // parseInt and parseUint return 64bit numbers, need to cast
 }
 
-func GenerateConfigLoader(configStructName, inputFile, outputLoader, outputDotenv string, generateEnv bool, testBuildTag string) error {
+func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoader, outputDotenv string, generateEnv bool, testBuildTag string) error {
 
 	var imports = map[string]struct{}{ // grows as we inspect fields
 		`"fmt"`:     {}, // always needed
@@ -37,7 +37,7 @@ func GenerateConfigLoader(configStructName, inputFile, outputLoader, outputDoten
 		`"strings"`: {},
 	}
 
-	prefix, err := getProjectNamePrefix()
+	prefix, err := getProjectNamePrefix(projectPrefix)
 	if err != nil {
 		panic(err)
 	}
@@ -153,14 +153,17 @@ func GenerateConfigLoader(configStructName, inputFile, outputLoader, outputDoten
 }
 
 func main() {
-	err := GenerateConfigLoader("Config", defaultInputFile, defaultOutputConfigLoader, defaultOutputDotenv, true, "")
+	err := GenerateConfigLoader("", "Config", defaultInputFile, defaultOutputConfigLoader, defaultOutputDotenv, true, "")
 	if err != nil {
 		fmt.Printf("failed to generate config: %v", err.Error())
 		os.Exit(1)
 	}
 }
 
-func getProjectNamePrefix() (string, error) {
+func getProjectNamePrefix(suppliedPrefix string) (string, error) {
+	if suppliedPrefix != "" {
+		return suppliedPrefix, nil
+	}
 	var prefix string
 	if len(os.Args) > 1 {
 		prefix = os.Args[1]
