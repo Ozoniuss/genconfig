@@ -17,7 +17,6 @@ type TemplateData struct {
 	Name           string
 	AssignmentName string
 	EnvVar         string
-	Type           string
 	ParseFunc      string
 	ErrorVar       string
 	FormatErr      bool
@@ -36,7 +35,7 @@ func printline(debug bool, a ...any) {
 	}
 }
 
-func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoader, outputDotenv string, generateEnv bool, testBuildTag string, debug bool) error {
+func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoader, outputDotenv string, testBuildTag string, debug bool) error {
 
 	prefix, err := getProjectNamePrefix(projectPrefix)
 	if err != nil {
@@ -85,8 +84,10 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoad
 		ImportList:   importList,
 	})
 
+	fmt.Println(fields)
+
 	// Generate .env
-	if generateEnv {
+	if outputDotenv != "" {
 		outEnv, _ := os.Create(outputDotenv)
 		defer outEnv.Close()
 		for _, field := range fields {
@@ -142,7 +143,6 @@ func insertTemplateDataEntryForStruct(structDefinition *ast.StructType, structNa
 					Name:           fullname,
 					AssignmentName: assignmentName,
 					EnvVar:         envKey,
-					Type:           typ,
 					ParseFunc:      parseFunc,
 					// ErrorVar:  "Err" + fullname + "NotSet",
 					FormatErr: formatErr,

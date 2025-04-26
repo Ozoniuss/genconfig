@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	gncfg "testmain/github/genconfig/internal"
+
+	gncfg "github.com/Ozoniuss/genconfig/internal"
 )
 
 const (
@@ -13,7 +14,7 @@ const (
 )
 
 func main() {
-	err := gncfg.GenerateConfigLoader("", "Config", defaultInputFile, defaultOutputConfigLoader, defaultOutputDotenv, true, "", false)
+	err := gncfg.GenerateConfigLoader("", "Config", defaultInputFile, defaultOutputConfigLoader, defaultOutputDotenv, "", false)
 	if err != nil {
 		fmt.Printf("failed to generate config: %v", err.Error())
 		os.Exit(1)
