@@ -11,32 +11,34 @@ import (
 )
 
 const (
-    EXAMPLE_HDD_SYNC_PATH_ENV = "EXAMPLE_HDD_SYNC_PATH"
-    EXAMPLE_DRY_RUN_ENV = "EXAMPLE_DRY_RUN"
+    EXAMPLE_HDDSYNCPATH_ENV = "EXAMPLE_HDDSYNCPATH"
+    EXAMPLE_DRYRUN_ENV = "EXAMPLE_DRYRUN"
     EXAMPLE_LOL_ENV = "EXAMPLE_LOL"
     EXAMPLE_TIMEOUT_ENV = "EXAMPLE_TIMEOUT"
     EXAMPLE_PORT_ENV = "EXAMPLE_PORT"
     EXAMPLE_PORT32_ENV = "EXAMPLE_PORT32"
     EXAMPLE_PORT16_ENV = "EXAMPLE_PORT16"
+    EXAMPLE_NE_NAME_ENV = "EXAMPLE_NE_NAME"
+    EXAMPLE_NE_AGE_ENV = "EXAMPLE_NE_AGE"
 )
 
 func LoadConfig() (Config, error) {
     var config Config
     var missingVars []string
     var formatVars []string
-    val_HddSyncPath, ok := os.LookupEnv(EXAMPLE_HDD_SYNC_PATH_ENV)
+    val_HddSyncPath, ok := os.LookupEnv(EXAMPLE_HDDSYNCPATH_ENV)
     if !ok {
-        missingVars = append(missingVars, EXAMPLE_HDD_SYNC_PATH_ENV)
+        missingVars = append(missingVars, EXAMPLE_HDDSYNCPATH_ENV)
     } else {
         config.HddSyncPath = val_HddSyncPath
     }
-    val_DryRun, ok := os.LookupEnv(EXAMPLE_DRY_RUN_ENV)
+    val_DryRun, ok := os.LookupEnv(EXAMPLE_DRYRUN_ENV)
     if !ok {
-        missingVars = append(missingVars, EXAMPLE_DRY_RUN_ENV)
+        missingVars = append(missingVars, EXAMPLE_DRYRUN_ENV)
     } else {
         parsed, err := strconv.ParseBool(val_DryRun)
         if err != nil {
-            formatVars = append(formatVars, EXAMPLE_DRY_RUN_ENV)
+            formatVars = append(formatVars, EXAMPLE_DRYRUN_ENV)
         } else {
             config.DryRun = parsed
         }
@@ -94,6 +96,23 @@ func LoadConfig() (Config, error) {
             formatVars = append(formatVars, EXAMPLE_PORT16_ENV)
         } else {
             config.Port16 = int16(parsed)
+        }
+    }
+    val_Ne_Name, ok := os.LookupEnv(EXAMPLE_NE_NAME_ENV)
+    if !ok {
+        missingVars = append(missingVars, EXAMPLE_NE_NAME_ENV)
+    } else {
+        config.Ne.Name = val_Ne_Name
+    }
+    val_Ne_Age, ok := os.LookupEnv(EXAMPLE_NE_AGE_ENV)
+    if !ok {
+        missingVars = append(missingVars, EXAMPLE_NE_AGE_ENV)
+    } else {
+        parsed, err := strconv.Atoi(val_Ne_Age)
+        if err != nil {
+            formatVars = append(formatVars, EXAMPLE_NE_AGE_ENV)
+        } else {
+            config.Ne.Age = parsed
         }
     }
 

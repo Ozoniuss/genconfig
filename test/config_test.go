@@ -17,7 +17,7 @@ type TestConfig1 struct {
 
 func TestGeneratedConfig1(t *testing.T) {
 
-	t.Setenv("TESTCONFIG1_APP_NAME", "SuperApp")
+	t.Setenv("TESTCONFIG1_APPNAME", "SuperApp")
 	t.Setenv("TESTCONFIG1_DEBUG", "true")
 	t.Setenv("TESTCONFIG1_TIMEOUT", "5s")
 	t.Setenv("TESTCONFIG1_RETRIES", "3")
@@ -47,10 +47,10 @@ type TestConfigInts struct {
 }
 
 func TestGeneratedConfigInts(t *testing.T) {
-	t.Setenv("TESTCONFIGINTS_INT8_VAL", "8")
-	t.Setenv("TESTCONFIGINTS_INT16_VAL", "1600")
-	t.Setenv("TESTCONFIGINTS_INT32_VAL", "320000")
-	t.Setenv("TESTCONFIGINTS_INT64_VAL", "6400000000")
+	t.Setenv("TESTCONFIGINTS_INT8VAL", "8")
+	t.Setenv("TESTCONFIGINTS_INT16VAL", "1600")
+	t.Setenv("TESTCONFIGINTS_INT32VAL", "320000")
+	t.Setenv("TESTCONFIGINTS_INT64VAL", "6400000000")
 
 	expected := TestConfigInts{
 		Int8Val:  8,
@@ -85,10 +85,10 @@ type TestConfigUints struct {
 }
 
 func TestGeneratedConfigUints(t *testing.T) {
-	t.Setenv("TESTCONFIGUINTS_UINT8_VAL", "8")
-	t.Setenv("TESTCONFIGUINTS_UINT16_VAL", "1600")
-	t.Setenv("TESTCONFIGUINTS_UINT32_VAL", "320000")
-	t.Setenv("TESTCONFIGUINTS_UINT64_VAL", "6400000000")
+	t.Setenv("TESTCONFIGUINTS_UINT8VAL", "8")
+	t.Setenv("TESTCONFIGUINTS_UINT16VAL", "1600")
+	t.Setenv("TESTCONFIGUINTS_UINT32VAL", "320000")
+	t.Setenv("TESTCONFIGUINTS_UINT64VAL", "6400000000")
 
 	expected := TestConfigUints{
 		Uint8Val:  8,
@@ -112,8 +112,8 @@ type TestConfigFloats struct {
 }
 
 func TestGeneratedConfigFloats(t *testing.T) {
-	t.Setenv("TESTCONFIGFLOATS_FLOAT32_VAL", "1.23")
-	t.Setenv("TESTCONFIGFLOATS_FLOAT64_VAL", "3.1415")
+	t.Setenv("TESTCONFIGFLOATS_FLOAT32VAL", "1.23")
+	t.Setenv("TESTCONFIGFLOATS_FLOAT64VAL", "3.1415")
 
 	expected := TestConfigFloats{
 		Float32Val: 1.23,
@@ -134,39 +134,35 @@ func TestGeneratedConfigFloats(t *testing.T) {
 	}
 }
 
-// type Nested struct {
-// 	NestedField string
-// 	Inner       struct {
-// 		Enabled bool
-// 	}
-// }
+type Nested struct {
+	InnerStr  string
+	InnerBool bool
+}
 
-// type TestConfigNested struct {
-// 	AppName string
-// 	Nested  Nested
-// }
+type TestConfigNested struct {
+	AppName string
+	Nested  Nested
+}
 
-// func TestGeneratedConfigNested(t *testing.T) {
-// 	t.Setenv("TEST_APP_NAME", "NestedApp")
-// 	t.Setenv("TEST_NESTED_NESTED_FIELD", "hello")
-// 	t.Setenv("TEST_NESTED_INNER_ENABLED", "true")
+func TestGeneratedConfigNested(t *testing.T) {
+	t.Setenv("TESTCONFIGNESTED_APPNAME", "NestedApp")
+	t.Setenv("TESTCONFIGNESTED_NESTED_INNERSTR", "hello")
+	t.Setenv("TESTCONFIGNESTED_NESTED_INNERBOOL", "true")
 
-// 	expected := TestConfigNested{
-// 		AppName: "NestedApp",
-// 		Nested: Nested{
-// 			NestedField: "hello",
-// 			Inner: struct{ Enabled bool }{
-// 				Enabled: true,
-// 			},
-// 		},
-// 	}
+	expected := TestConfigNested{
+		AppName: "NestedApp",
+		Nested: Nested{
+			InnerStr:  "hello",
+			InnerBool: true,
+		},
+	}
 
-// 	actual, err := LoadTestConfigNested()
-// 	if err != nil {
-// 		t.Fatalf("expected no error, got: %s", err)
-// 	}
+	actual, err := LoadTestConfigNested()
+	if err != nil {
+		t.Fatalf("expected no error, got: %s", err)
+	}
 
-// 	if expected != actual {
-// 		t.Fatalf("expected: %+v, got: %+v", expected, actual)
-// 	}
-// }
+	if expected != actual {
+		t.Fatalf("expected: %+v, got: %+v", expected, actual)
+	}
+}

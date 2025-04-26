@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"text/template"
+	"unicode"
 )
 
 const (
@@ -19,14 +20,94 @@ const (
 )
 
 type TemplateData struct {
-	Name      string
-	EnvVar    string
-	Type      string
-	ParseFunc string
-	ErrorVar  string
-	FormatErr bool
-	BitSize   int    // used to determine how to call parseFunc
-	CastFunc  string // parseInt and parseUint return 64bit numbers, need to cast
+	Name           string
+	AssignmentName string
+	EnvVar         string
+	Type           string
+	ParseFunc      string
+	ErrorVar       string
+	FormatErr      bool
+	BitSize        int    // used to determine how to call parseFunc
+	CastFunc       string // parseInt and parseUint return 64bit numbers, need to cast
+}
+
+func insertTemplateDataEntryForStruct(structDefinition *ast.StructType, structName string, parentNames *[]string, projectPrefix string, outputImports map[string]struct{}, templateData *[]TemplateData, allTopLevelStructDefinitions map[string]*ast.StructType) {
+
+	if structDefinition.Fields == nil {
+		return
+	}
+
+	for _, f := range structDefinition.Fields.List {
+		if len(f.Names) == 0 {
+			continue
+		}
+		// debug multiple names in a row
+		// fmt.Println("names", f.Names)
+
+		// in the same struct, you can have multiple fields of the
+		// same type declared on the same line
+		for _, n := range f.Names {
+			// fullname := n.Name
+			fullname := strings.Join(append(*parentNames, n.Name), ".")
+			assignmentName := "val_" + strings.Join(append(*parentNames, n.Name), "_")
+			typ := convertTypeIdentifierToString(f.Type)
+			fmt.Println("identifier type", typ, "field name", n.Name)
+
+			// we have encoutnered a struct defined in the same file
+			if childDefinition, ok := allTopLevelStructDefinitions[typ]; ok {
+				*parentNames = append(*parentNames, n.Name)
+				insertTemplateDataEntryForStruct(childDefinition, typ, parentNames, projectPrefix, outputImports, templateData, allTopLevelStructDefinitions)
+				*parentNames = (*parentNames)[:len(*parentNames)-1]
+			} else {
+				canonicalNameList := append([]string{projectPrefix}, *parentNames...)
+				canonicalNameList = append(canonicalNameList, n.Name)
+				envKey := getEnvKey(canonicalNameList)
+
+				parseFunc, formatErr, bitSize, castFunc, ok := lookupParseFunc(typ)
+				if !ok {
+					panic("unsupported type in config: " + typ)
+				}
+
+				if p := pkgForParseFunc(parseFunc); p != "" {
+					outputImports[p] = struct{}{}
+				}
+
+				*templateData = append(*templateData, TemplateData{
+					Name:           fullname,
+					AssignmentName: assignmentName,
+					EnvVar:         envKey,
+					Type:           typ,
+					ParseFunc:      parseFunc,
+					// ErrorVar:  "Err" + fullname + "NotSet",
+					FormatErr: formatErr,
+					BitSize:   bitSize,
+					CastFunc:  castFunc,
+				})
+			}
+
+		}
+
+	}
+}
+
+func getEnvKey(canonicalNameList []string) string {
+	sb := &strings.Builder{}
+	for _, part := range canonicalNameList {
+		for _, r := range part {
+			// keep only letters and digits in the env var name. This is prone
+			// to errors e.g. if someone names a field "my_field" and has a field
+			// called "my" of type struct that has a field called "field" but
+			// come on
+			if unicode.IsDigit(r) {
+				sb.WriteRune(r)
+			}
+			if unicode.IsLetter(r) {
+				sb.WriteRune(unicode.ToUpper(r))
+			}
+		}
+		sb.WriteRune('_')
+	}
+	return strings.TrimSuffix(sb.String(), "_")
 }
 
 func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoader, outputDotenv string, generateEnv bool, testBuildTag string) error {
@@ -48,68 +129,15 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoad
 
 	var fields []TemplateData
 
-	for _, decl := range node.Decls {
+	// fmt.Printf("node %+v", *node)
 
-		// ignore function and bad declarations
-		gen, ok := decl.(*ast.GenDecl)
-		if !ok || gen.Tok != token.TYPE {
-			// only look for type (struct) declarations
-			continue
-		}
+	allTopLevelStructDefinitions := getAllTopLevelStructDefinitions(node)
+	fmt.Println("all struct defintions", allTopLevelStructDefinitions)
 
-		for _, spec := range gen.Specs {
-			ts, ok := spec.(*ast.TypeSpec)
+	configTypeDefinition := allTopLevelStructDefinitions[configStructName]
+	parentNames := []string{}
 
-			if !ok || ts.Name.Name != configStructName {
-				continue
-			}
-
-			st, ok := ts.Type.(*ast.StructType)
-			if !ok {
-				continue
-			}
-
-			if st.Fields != nil {
-				for _, f := range st.Fields.List {
-					if len(f.Names) == 0 {
-						continue
-					}
-					fmt.Println("names", f.Names)
-
-					// in the same struct, you can have multiple fields of the
-					// same type declared on the same line
-					for _, n := range f.Names {
-						name := n.Name
-						typ := convertTypeIdentifierToString(f.Type)
-						envKey := prefix + "_" + strings.ToUpper(snakeCase(name))
-
-						parseFunc, formatErr, bitSize, castFunc, ok := lookupParseFunc(typ)
-						if !ok {
-							panic("unsupported type in config: " + typ)
-						}
-
-						if p := pkgForParseFunc(parseFunc); p != "" {
-							outputImports[p] = struct{}{}
-						}
-
-						fields = append(fields, TemplateData{
-							Name:      name,
-							EnvVar:    envKey,
-							Type:      typ,
-							ParseFunc: parseFunc,
-							ErrorVar:  "Err" + name + "NotSet",
-							FormatErr: formatErr,
-							BitSize:   bitSize,
-							CastFunc:  castFunc,
-						})
-
-					}
-
-				}
-			}
-
-		}
-	}
+	insertTemplateDataEntryForStruct(configTypeDefinition, configStructName, &parentNames, prefix, outputImports, &fields, allTopLevelStructDefinitions)
 
 	importList := generateImportsListAsTemplateString(outputImports)
 
@@ -189,6 +217,30 @@ func getProjectNamePrefix(suppliedPrefix string) (string, error) {
 	return prefix, nil
 }
 
+func getAllTopLevelStructDefinitions(node *ast.File) map[string]*ast.StructType {
+	allTopLevelStructDefinitions := map[string]*ast.StructType{}
+	for _, decl := range node.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok || gen.Tok != token.TYPE {
+			continue
+		}
+		for _, spec := range gen.Specs {
+			ts, ok := spec.(*ast.TypeSpec)
+			if !ok {
+				continue
+			}
+			// only care about struct type definitions for now
+			st, ok := ts.Type.(*ast.StructType)
+			if !ok {
+				continue
+			}
+			// add it to the list of definitions
+			allTopLevelStructDefinitions[ts.Name.Name] = st
+		}
+	}
+	return allTopLevelStructDefinitions
+}
+
 func convertTypeIdentifierToString(expr ast.Expr) string {
 	switch t := expr.(type) {
 	case *ast.Ident:
@@ -198,17 +250,6 @@ func convertTypeIdentifierToString(expr ast.Expr) string {
 	default:
 		panic("expected identifier or selector expression")
 	}
-}
-
-func snakeCase(in string) string {
-	var out []rune
-	for i, r := range in {
-		if i > 0 && r >= 'A' && r <= 'Z' {
-			out = append(out, '_')
-		}
-		out = append(out, r)
-	}
-	return strings.ToLower(string(out))
 }
 
 func lookupParseFunc(typ string) (parseFunc string, canHaveFormatErr bool, bitSize int, castFuncForIntAndFloat string, ok bool) {
@@ -290,35 +331,35 @@ func Load{{ .StructName }}() ({{ .StructName }}, error) {
     var formatVars []string
 
 {{- range .Fields }}
-    val_{{ .Name }}, ok := os.LookupEnv({{ .EnvVar }}_ENV)
+    {{ .AssignmentName }}, ok := os.LookupEnv({{ .EnvVar }}_ENV)
     if !ok {
         missingVars = append(missingVars, {{ .EnvVar }}_ENV)
     } else {
         {{- if eq .ParseFunc "raw" }}
-        config.{{ .Name }} = val_{{ .Name }}
+        config.{{ .Name }} = {{ .AssignmentName }}
         {{- else if eq .ParseFunc "strconv.Atoi" }}
-        parsed, err := strconv.Atoi(val_{{ .Name }})
+        parsed, err := strconv.Atoi({{ .AssignmentName }})
         if err != nil {
             formatVars = append(formatVars, {{ .EnvVar }}_ENV)
         } else {
             config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
         }
         {{- else if or (eq .ParseFunc "strconv.ParseInt") (eq .ParseFunc "strconv.ParseUint") }}
-        parsed, err := {{ .ParseFunc }}(val_{{ .Name }}, 10, {{ .BitSize }})
+        parsed, err := {{ .ParseFunc }}({{ .AssignmentName }}, 10, {{ .BitSize }})
         if err != nil {
             formatVars = append(formatVars, {{ .EnvVar }}_ENV)
         } else {
             config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
         }
 		{{- else if eq .ParseFunc "strconv.ParseFloat" }}
-        parsed, err := strconv.ParseFloat(val_{{ .Name }}, {{ .BitSize }})
+        parsed, err := strconv.ParseFloat({{ .AssignmentName }}, {{ .BitSize }})
         if err != nil {
             formatVars = append(formatVars, {{ .EnvVar }}_ENV)
         } else {
             config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
         }
         {{- else }}
-        parsed, err := {{ .ParseFunc }}(val_{{ .Name }})
+        parsed, err := {{ .ParseFunc }}({{ .AssignmentName }})
         if err != nil {
             formatVars = append(formatVars, {{ .EnvVar }}_ENV)
         } else {
