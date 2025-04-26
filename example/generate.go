@@ -1,7 +1,7 @@
 package main
 
 import (
-	genconfig "testmain/github/genconfig/internal"
+	genconfig "github.com/Ozoniuss/genconfig/internal"
 )
 
 func main() {

@@ -1,6 +1,6 @@
 package main
 
-import genconfig "testmain/github/genconfig/internal"
+import genconfig "github.com/Ozoniuss/genconfig/internal"
 
 func main() {
 	genconfig.GenerateConfigLoader("TESTCONFIG1", "TestConfig1", "config_test.go", "c1_test.go", "", false, "testcases", false)
