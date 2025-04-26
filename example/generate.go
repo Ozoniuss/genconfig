@@ -1,7 +1,7 @@
 package main
 
 import (
-	"testmain/github/genconfig"
+	genconfig "testmain/github/genconfig/internal"
 )
 
 func main() {

@@ -13,12 +13,6 @@ import (
 	"unicode"
 )
 
-const (
-	defaultInputFile          = "config.go"
-	defaultOutputDotenv       = ".env"
-	defaultOutputConfigLoader = "config_gen.go"
-)
-
 type TemplateData struct {
 	Name           string
 	AssignmentName string
@@ -180,14 +174,6 @@ func getEnvKey(canonicalNameList []string) string {
 		sb.WriteRune('_')
 	}
 	return strings.TrimSuffix(sb.String(), "_")
-}
-
-func main() {
-	err := GenerateConfigLoader("", "Config", defaultInputFile, defaultOutputConfigLoader, defaultOutputDotenv, true, "", false)
-	if err != nil {
-		fmt.Printf("failed to generate config: %v", err.Error())
-		os.Exit(1)
-	}
 }
 
 func setupImportsAlwaysNeeded() map[string]struct{} {
