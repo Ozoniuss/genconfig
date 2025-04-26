@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	genconfig.GenerateConfigLoader("", "Config", "config.go", "config_gen.go", "", true, "")
+	genconfig.GenerateConfigLoader("", "Config", "config.go", "config_gen.go", "", true, "", true)
 }

@@ -31,7 +31,79 @@ type TemplateData struct {
 	CastFunc       string // parseInt and parseUint return 64bit numbers, need to cast
 }
 
-func insertTemplateDataEntryForStruct(structDefinition *ast.StructType, structName string, parentNames *[]string, projectPrefix string, outputImports map[string]struct{}, templateData *[]TemplateData, allTopLevelStructDefinitions map[string]*ast.StructType) {
+func printformat(debug bool, format string, a ...any) {
+	if debug {
+		fmt.Printf(format, a...)
+	}
+}
+func printline(debug bool, a ...any) {
+	if debug {
+		fmt.Println(a...)
+	}
+}
+
+func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoader, outputDotenv string, generateEnv bool, testBuildTag string, debug bool) error {
+
+	prefix, err := getProjectNamePrefix(projectPrefix)
+	if err != nil {
+		panic(err)
+	}
+	printformat(debug, "using project name prefix %s\n", prefix)
+
+	outputImports := setupImportsAlwaysNeeded()
+
+	// Parse config.go
+	fset := token.NewFileSet()
+	node, err := parser.ParseFile(fset, inputFile, nil, parser.AllErrors)
+	if err != nil {
+		panic(err)
+	}
+
+	var fields []TemplateData
+
+	printformat(debug, "node %+v", *node)
+
+	allTopLevelStructDefinitions := getAllTopLevelStructDefinitions(node)
+	printline(debug, "all struct defintions", allTopLevelStructDefinitions)
+
+	configTypeDefinition := allTopLevelStructDefinitions[configStructName]
+	parentNames := []string{}
+
+	insertTemplateDataEntryForStruct(configTypeDefinition, configStructName, &parentNames, prefix, outputImports, &fields, allTopLevelStructDefinitions, debug)
+
+	importList := generateImportsListAsTemplateString(outputImports)
+
+	// Generate config_gen.go
+	outGo, _ := os.Create(outputLoader)
+	defer outGo.Close()
+
+	goTemplate.Execute(outGo, struct {
+		Prefix       string
+		StructName   string
+		Fields       []TemplateData
+		TestBuildTag string
+		ImportList   string
+	}{
+		Prefix:       prefix,
+		StructName:   configStructName,
+		Fields:       fields,
+		TestBuildTag: testBuildTag,
+		ImportList:   importList,
+	})
+
+	// Generate .env
+	if generateEnv {
+		outEnv, _ := os.Create(outputDotenv)
+		defer outEnv.Close()
+		for _, field := range fields {
+			fmt.Fprintf(outEnv, "%s=\n", field.EnvVar)
+		}
+	}
+
+	return nil
+}
+
+func insertTemplateDataEntryForStruct(structDefinition *ast.StructType, structName string, parentNames *[]string, projectPrefix string, outputImports map[string]struct{}, templateData *[]TemplateData, allTopLevelStructDefinitions map[string]*ast.StructType, debug bool) {
 
 	if structDefinition.Fields == nil {
 		return
@@ -42,7 +114,7 @@ func insertTemplateDataEntryForStruct(structDefinition *ast.StructType, structNa
 			continue
 		}
 		// debug multiple names in a row
-		// fmt.Println("names", f.Names)
+		// printline(debug, "names", f.Names)
 
 		// in the same struct, you can have multiple fields of the
 		// same type declared on the same line
@@ -51,12 +123,12 @@ func insertTemplateDataEntryForStruct(structDefinition *ast.StructType, structNa
 			fullname := strings.Join(append(*parentNames, n.Name), ".")
 			assignmentName := "val_" + strings.Join(append(*parentNames, n.Name), "_")
 			typ := convertTypeIdentifierToString(f.Type)
-			fmt.Println("identifier type", typ, "field name", n.Name)
+			printline(debug, "identifier type", typ, "field name", n.Name)
 
 			// we have encoutnered a struct defined in the same file
 			if childDefinition, ok := allTopLevelStructDefinitions[typ]; ok {
 				*parentNames = append(*parentNames, n.Name)
-				insertTemplateDataEntryForStruct(childDefinition, typ, parentNames, projectPrefix, outputImports, templateData, allTopLevelStructDefinitions)
+				insertTemplateDataEntryForStruct(childDefinition, typ, parentNames, projectPrefix, outputImports, templateData, allTopLevelStructDefinitions, debug)
 				*parentNames = (*parentNames)[:len(*parentNames)-1]
 			} else {
 				canonicalNameList := append([]string{projectPrefix}, *parentNames...)
@@ -110,69 +182,8 @@ func getEnvKey(canonicalNameList []string) string {
 	return strings.TrimSuffix(sb.String(), "_")
 }
 
-func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoader, outputDotenv string, generateEnv bool, testBuildTag string) error {
-
-	prefix, err := getProjectNamePrefix(projectPrefix)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("using project name prefix %s\n", prefix)
-
-	outputImports := setupImportsAlwaysNeeded()
-
-	// Parse config.go
-	fset := token.NewFileSet()
-	node, err := parser.ParseFile(fset, inputFile, nil, parser.AllErrors)
-	if err != nil {
-		panic(err)
-	}
-
-	var fields []TemplateData
-
-	// fmt.Printf("node %+v", *node)
-
-	allTopLevelStructDefinitions := getAllTopLevelStructDefinitions(node)
-	fmt.Println("all struct defintions", allTopLevelStructDefinitions)
-
-	configTypeDefinition := allTopLevelStructDefinitions[configStructName]
-	parentNames := []string{}
-
-	insertTemplateDataEntryForStruct(configTypeDefinition, configStructName, &parentNames, prefix, outputImports, &fields, allTopLevelStructDefinitions)
-
-	importList := generateImportsListAsTemplateString(outputImports)
-
-	// Generate config_gen.go
-	outGo, _ := os.Create(outputLoader)
-	defer outGo.Close()
-
-	goTemplate.Execute(outGo, struct {
-		Prefix       string
-		StructName   string
-		Fields       []TemplateData
-		TestBuildTag string
-		ImportList   string
-	}{
-		Prefix:       prefix,
-		StructName:   configStructName,
-		Fields:       fields,
-		TestBuildTag: testBuildTag,
-		ImportList:   importList,
-	})
-
-	// Generate .env
-	if generateEnv {
-		outEnv, _ := os.Create(outputDotenv)
-		defer outEnv.Close()
-		for _, field := range fields {
-			fmt.Fprintf(outEnv, "%s=\n", field.EnvVar)
-		}
-	}
-
-	return nil
-}
-
 func main() {
-	err := GenerateConfigLoader("", "Config", defaultInputFile, defaultOutputConfigLoader, defaultOutputDotenv, true, "")
+	err := GenerateConfigLoader("", "Config", defaultInputFile, defaultOutputConfigLoader, defaultOutputDotenv, true, "", false)
 	if err != nil {
 		fmt.Printf("failed to generate config: %v", err.Error())
 		os.Exit(1)
