@@ -84,7 +84,7 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoad
 		ImportList:   importList,
 	})
 
-	fmt.Println(fields)
+	printline(debug, fields)
 
 	// Generate .env
 	if outputDotenv != "" {

@@ -29,3 +29,6 @@ test/c[0-9]*.go
 
 
 .vscode
+
+# testing executable
+genconfig
