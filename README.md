@@ -20,7 +20,7 @@ See how to use the tools.go pattern [here](https://www.jvt.me/posts/2022/06/15/g
 
 Add the following to your tools.go file:
 
-```
+```go
 //go:build tools
 // +build tools
 
