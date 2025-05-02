@@ -4,7 +4,6 @@ package main
 
 import (
     "errors"
-    "fmt"
     "os"
     "strconv"
     "strings"
@@ -44,107 +43,107 @@ var (
 
 func LoadConfig() (Config, error) {
     var config Config
-    var missingVars []string
-    var formatVars []string
+    var missingVars []error
+    var formatVars []error
     val_HddSyncPath, ok := os.LookupEnv(EXAMPLE_HDDSYNCPATH_ENV)
     if !ok {
-        missingVars = append(missingVars, EXAMPLE_HDDSYNCPATH_ENV)
+        missingVars = append(missingVars, ErrExampleHddsyncpathEnvMissing)
     } else {
         config.HddSyncPath = val_HddSyncPath
     }
     val_DryRun, ok := os.LookupEnv(EXAMPLE_DRYRUN_ENV)
     if !ok {
-        missingVars = append(missingVars, EXAMPLE_DRYRUN_ENV)
+        missingVars = append(missingVars, ErrExampleDryrunEnvMissing)
     } else {
         parsed, err := strconv.ParseBool(val_DryRun)
         if err != nil {
-            formatVars = append(formatVars, EXAMPLE_DRYRUN_ENV)
+            formatVars = append(formatVars, ErrExampleDryrunEnvInvalid)
         } else {
             config.DryRun = parsed
         }
     }
     val_Lol, ok := os.LookupEnv(EXAMPLE_LOL_ENV)
     if !ok {
-        missingVars = append(missingVars, EXAMPLE_LOL_ENV)
+        missingVars = append(missingVars, ErrExampleLolEnvMissing)
     } else {
         parsed, err := strconv.ParseBool(val_Lol)
         if err != nil {
-            formatVars = append(formatVars, EXAMPLE_LOL_ENV)
+            formatVars = append(formatVars, ErrExampleLolEnvInvalid)
         } else {
             config.Lol = parsed
         }
     }
     val_Timeout, ok := os.LookupEnv(EXAMPLE_TIMEOUT_ENV)
     if !ok {
-        missingVars = append(missingVars, EXAMPLE_TIMEOUT_ENV)
+        missingVars = append(missingVars, ErrExampleTimeoutEnvMissing)
     } else {
         parsed, err := time.ParseDuration(val_Timeout)
         if err != nil {
-            formatVars = append(formatVars, EXAMPLE_TIMEOUT_ENV)
+            formatVars = append(formatVars, ErrExampleTimeoutEnvInvalid)
         } else {
             config.Timeout = parsed
         }
     }
     val_Port, ok := os.LookupEnv(EXAMPLE_PORT_ENV)
     if !ok {
-        missingVars = append(missingVars, EXAMPLE_PORT_ENV)
+        missingVars = append(missingVars, ErrExamplePortEnvMissing)
     } else {
         parsed, err := strconv.Atoi(val_Port)
         if err != nil {
-            formatVars = append(formatVars, EXAMPLE_PORT_ENV)
+            formatVars = append(formatVars, ErrExamplePortEnvInvalid)
         } else {
             config.Port = parsed
         }
     }
     val_Port32, ok := os.LookupEnv(EXAMPLE_PORT32_ENV)
     if !ok {
-        missingVars = append(missingVars, EXAMPLE_PORT32_ENV)
+        missingVars = append(missingVars, ErrExamplePort32EnvMissing)
     } else {
         parsed, err := strconv.ParseUint(val_Port32, 10, 32)
         if err != nil {
-            formatVars = append(formatVars, EXAMPLE_PORT32_ENV)
+            formatVars = append(formatVars, ErrExamplePort32EnvInvalid)
         } else {
             config.Port32 = uint32(parsed)
         }
     }
     val_Port16, ok := os.LookupEnv(EXAMPLE_PORT16_ENV)
     if !ok {
-        missingVars = append(missingVars, EXAMPLE_PORT16_ENV)
+        missingVars = append(missingVars, ErrExamplePort16EnvMissing)
     } else {
         parsed, err := strconv.ParseInt(val_Port16, 10, 16)
         if err != nil {
-            formatVars = append(formatVars, EXAMPLE_PORT16_ENV)
+            formatVars = append(formatVars, ErrExamplePort16EnvInvalid)
         } else {
             config.Port16 = int16(parsed)
         }
     }
     val_Ne_Name, ok := os.LookupEnv(EXAMPLE_NE_NAME_ENV)
     if !ok {
-        missingVars = append(missingVars, EXAMPLE_NE_NAME_ENV)
+        missingVars = append(missingVars, ErrExampleNeNameEnvMissing)
     } else {
         config.Ne.Name = val_Ne_Name
     }
     val_Ne_Age, ok := os.LookupEnv(EXAMPLE_NE_AGE_ENV)
     if !ok {
-        missingVars = append(missingVars, EXAMPLE_NE_AGE_ENV)
+        missingVars = append(missingVars, ErrExampleNeAgeEnvMissing)
     } else {
         parsed, err := strconv.Atoi(val_Ne_Age)
         if err != nil {
-            formatVars = append(formatVars, EXAMPLE_NE_AGE_ENV)
+            formatVars = append(formatVars, ErrExampleNeAgeEnvInvalid)
         } else {
             config.Ne.Age = parsed
         }
     }
 
     if len(missingVars) > 0 || len(formatVars) > 0 {
-        var parts []string
+        var verr error
         if len(missingVars) > 0 {
-            parts = append(parts, fmt.Sprintf("missing env vars: %s", strings.Join(missingVars, ", ")))
+            verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
         }
         if len(formatVars) > 0 {
-            parts = append(parts, fmt.Sprintf("invalid format in env vars: %s", strings.Join(formatVars, ", ")))
+            verr = errors.Join(verr, InvalidEnvVarsError{vars: missingVars})
         }
-        return Config{}, fmt.Errorf(strings.Join(parts, "; "))
+        return Config{}, verr
     }
 
     return config, nil
@@ -166,7 +165,7 @@ func (m MissingEnvVarsError) Error() string {
 	for _, v := range m.vars {
 		varsstr = append(varsstr, v.Error())
 	}
-	return strings.Join(varsstr, ",")
+	return "envs " + strings.Join(varsstr, ",") + " are not set"
 }
 
 type InvalidEnvVarsError struct {
@@ -185,5 +184,5 @@ func (m InvalidEnvVarsError) Error() string {
 	for _, v := range m.vars {
 		varsstr = append(varsstr, v.Error())
 	}
-	return strings.Join(varsstr, ",")
+	return "envs " + strings.Join(varsstr, ",") + " have an invalid value"
 }

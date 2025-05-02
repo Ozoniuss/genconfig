@@ -18,10 +18,11 @@ type TemplateData struct {
 	AssignmentName string
 	EnvVar         string
 	ParseFunc      string
-	ErrorVars      []string
-	FormatErr      bool
-	BitSize        int    // used to determine how to call parseFunc
-	CastFunc       string // parseInt and parseUint return 64bit numbers, need to cast
+	// first is always missing error, second is invalid, if exists
+	ErrorVars []string
+	FormatErr bool
+	BitSize   int    // used to determine how to call parseFunc
+	CastFunc  string // parseInt and parseUint return 64bit numbers, need to cast
 }
 
 func printformat(debug bool, format string, a ...any) {
@@ -205,7 +206,6 @@ func getErrKey(canonicalNameList []string) string {
 
 func setupImportsAlwaysNeeded() map[string]struct{} {
 	return map[string]struct{}{
-		`"fmt"`:     {},
 		`"os"`:      {},
 		`"strings"`: {},
 		`"errors"`:  {},
@@ -360,41 +360,41 @@ var (
 
 func Load{{ .StructName }}() ({{ .StructName }}, error) {
     var config {{ .StructName }}
-    var missingVars []string
-    var formatVars []string
+    var missingVars []error
+    var formatVars []error
 
 {{- range .Fields }}
     {{ .AssignmentName }}, ok := os.LookupEnv({{ .EnvVar }}_ENV)
     if !ok {
-        missingVars = append(missingVars, {{ .EnvVar }}_ENV)
+        missingVars = append(missingVars, {{ index .ErrorVars 0 }})
     } else {
         {{- if eq .ParseFunc "raw" }}
         config.{{ .Name }} = {{ .AssignmentName }}
         {{- else if eq .ParseFunc "strconv.Atoi" }}
         parsed, err := strconv.Atoi({{ .AssignmentName }})
         if err != nil {
-            formatVars = append(formatVars, {{ .EnvVar }}_ENV)
+            formatVars = append(formatVars, {{ index .ErrorVars 1 }})
         } else {
             config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
         }
         {{- else if or (eq .ParseFunc "strconv.ParseInt") (eq .ParseFunc "strconv.ParseUint") }}
         parsed, err := {{ .ParseFunc }}({{ .AssignmentName }}, 10, {{ .BitSize }})
         if err != nil {
-            formatVars = append(formatVars, {{ .EnvVar }}_ENV)
+            formatVars = append(formatVars, {{ index .ErrorVars 1 }})
         } else {
             config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
         }
 		{{- else if eq .ParseFunc "strconv.ParseFloat" }}
         parsed, err := strconv.ParseFloat({{ .AssignmentName }}, {{ .BitSize }})
         if err != nil {
-            formatVars = append(formatVars, {{ .EnvVar }}_ENV)
+            formatVars = append(formatVars, {{ index .ErrorVars 1 }})
         } else {
             config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
         }
         {{- else }}
         parsed, err := {{ .ParseFunc }}({{ .AssignmentName }})
         if err != nil {
-            formatVars = append(formatVars, {{ .EnvVar }}_ENV)
+            formatVars = append(formatVars, {{ index .ErrorVars 1 }})
         } else {
             config.{{ .Name }} = parsed
         }
@@ -403,14 +403,14 @@ func Load{{ .StructName }}() ({{ .StructName }}, error) {
 {{- end }}
 
     if len(missingVars) > 0 || len(formatVars) > 0 {
-        var parts []string
+        var verr error
         if len(missingVars) > 0 {
-            parts = append(parts, fmt.Sprintf("missing env vars: %s", strings.Join(missingVars, ", ")))
+            verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
         }
         if len(formatVars) > 0 {
-            parts = append(parts, fmt.Sprintf("invalid format in env vars: %s", strings.Join(formatVars, ", ")))
+            verr = errors.Join(verr, InvalidEnvVarsError{vars: missingVars})
         }
-        return {{ .StructName }}{}, fmt.Errorf(strings.Join(parts, "; "))
+        return {{ .StructName }}{}, verr
     }
 
     return config, nil
@@ -432,7 +432,7 @@ func (m MissingEnvVarsError) Error() string {
 	for _, v := range m.vars {
 		varsstr = append(varsstr, v.Error())
 	}
-	return strings.Join(varsstr, ",")
+	return "envs " + strings.Join(varsstr, ",") + " are not set"
 }
 
 type InvalidEnvVarsError struct {
@@ -451,6 +451,6 @@ func (m InvalidEnvVarsError) Error() string {
 	for _, v := range m.vars {
 		varsstr = append(varsstr, v.Error())
 	}
-	return strings.Join(varsstr, ",")
+	return "envs " + strings.Join(varsstr, ",") + " have an invalid value"
 }
 `))
