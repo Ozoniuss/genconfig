@@ -3,6 +3,7 @@
 package main
 
 import (
+    "errors"
     "fmt"
     "os"
     "strconv"
@@ -20,6 +21,25 @@ const (
     EXAMPLE_PORT16_ENV = "EXAMPLE_PORT16"
     EXAMPLE_NE_NAME_ENV = "EXAMPLE_NE_NAME"
     EXAMPLE_NE_AGE_ENV = "EXAMPLE_NE_AGE"
+)
+
+var (
+    ErrExampleHddsyncpathEnvMissing = errors.New(EXAMPLE_HDDSYNCPATH_ENV)
+    ErrExampleDryrunEnvMissing = errors.New(EXAMPLE_DRYRUN_ENV)
+    ErrExampleDryrunEnvInvalid = errors.New(EXAMPLE_DRYRUN_ENV)
+    ErrExampleLolEnvMissing = errors.New(EXAMPLE_LOL_ENV)
+    ErrExampleLolEnvInvalid = errors.New(EXAMPLE_LOL_ENV)
+    ErrExampleTimeoutEnvMissing = errors.New(EXAMPLE_TIMEOUT_ENV)
+    ErrExampleTimeoutEnvInvalid = errors.New(EXAMPLE_TIMEOUT_ENV)
+    ErrExamplePortEnvMissing = errors.New(EXAMPLE_PORT_ENV)
+    ErrExamplePortEnvInvalid = errors.New(EXAMPLE_PORT_ENV)
+    ErrExamplePort32EnvMissing = errors.New(EXAMPLE_PORT32_ENV)
+    ErrExamplePort32EnvInvalid = errors.New(EXAMPLE_PORT32_ENV)
+    ErrExamplePort16EnvMissing = errors.New(EXAMPLE_PORT16_ENV)
+    ErrExamplePort16EnvInvalid = errors.New(EXAMPLE_PORT16_ENV)
+    ErrExampleNeNameEnvMissing = errors.New(EXAMPLE_NE_NAME_ENV)
+    ErrExampleNeAgeEnvMissing = errors.New(EXAMPLE_NE_AGE_ENV)
+    ErrExampleNeAgeEnvInvalid = errors.New(EXAMPLE_NE_AGE_ENV)
 )
 
 func LoadConfig() (Config, error) {

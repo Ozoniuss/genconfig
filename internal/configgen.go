@@ -18,7 +18,7 @@ type TemplateData struct {
 	AssignmentName string
 	EnvVar         string
 	ParseFunc      string
-	ErrorVar       string
+	ErrorVars      []string
 	FormatErr      bool
 	BitSize        int    // used to determine how to call parseFunc
 	CastFunc       string // parseInt and parseUint return 64bit numbers, need to cast
@@ -130,9 +130,13 @@ func insertTemplateDataEntryForStruct(structDefinition *ast.StructType, structNa
 				canonicalNameList = append(canonicalNameList, n.Name)
 				envKey := getEnvKey(canonicalNameList)
 
-				parseFunc, formatErr, bitSize, castFunc, ok := lookupParseFunc(typ)
+				parseFunc, canHaveFormatErr, bitSize, castFunc, ok := lookupParseFunc(typ)
 				if !ok {
 					panic("unsupported type in config: " + typ)
+				}
+				errorsVars := []string{getErrKey(canonicalNameList) + "Missing"}
+				if canHaveFormatErr {
+					errorsVars = append(errorsVars, getErrKey(canonicalNameList)+"Invalid")
 				}
 
 				if p := pkgForParseFunc(parseFunc); p != "" {
@@ -144,10 +148,10 @@ func insertTemplateDataEntryForStruct(structDefinition *ast.StructType, structNa
 					AssignmentName: assignmentName,
 					EnvVar:         envKey,
 					ParseFunc:      parseFunc,
-					// ErrorVar:  "Err" + fullname + "NotSet",
-					FormatErr: formatErr,
-					BitSize:   bitSize,
-					CastFunc:  castFunc,
+					ErrorVars:      errorsVars,
+					FormatErr:      canHaveFormatErr,
+					BitSize:        bitSize,
+					CastFunc:       castFunc,
 				})
 			}
 
@@ -176,11 +180,35 @@ func getEnvKey(canonicalNameList []string) string {
 	return strings.TrimSuffix(sb.String(), "_")
 }
 
+func getErrKey(canonicalNameList []string) string {
+	sb := &strings.Builder{}
+	sb.WriteString("Err")
+	for _, part := range canonicalNameList {
+		for i, r := range part {
+			// keep only letters and digits in the env var name. This is prone
+			// to errors e.g. if someone names a field "my_field" and has a field
+			// called "my" of type struct that has a field called "field" but
+			// come on
+			if unicode.IsDigit(r) {
+				sb.WriteRune(r)
+			}
+			if unicode.IsLetter(r) && i == 0 {
+				sb.WriteRune(unicode.ToUpper(r))
+			} else if unicode.IsLetter(r) && i != 0 {
+				sb.WriteRune(unicode.ToLower(r))
+			}
+		}
+	}
+	sb.WriteString("Env")
+	return sb.String()
+}
+
 func setupImportsAlwaysNeeded() map[string]struct{} {
 	return map[string]struct{}{
 		`"fmt"`:     {},
 		`"os"`:      {},
 		`"strings"`: {},
+		`"errors"`:  {},
 	}
 
 }
@@ -319,6 +347,14 @@ import (
 const (
 {{- range .Fields }}
     {{ .EnvVar }}_ENV = "{{ .EnvVar }}"
+{{- end }}
+)
+
+var (
+{{- range $f := .Fields }}
+{{- range $f.ErrorVars }}
+    {{ . }} = errors.New({{ $f.EnvVar }}_ENV)
+{{- end }}
 {{- end }}
 )
 
