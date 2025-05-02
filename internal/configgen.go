@@ -415,4 +415,42 @@ func Load{{ .StructName }}() ({{ .StructName }}, error) {
 
     return config, nil
 }
+
+type MissingEnvVarsError struct {
+	vars []error
+}
+
+func (m MissingEnvVarsError) Unwrap() []error {
+	return m.vars
+}
+
+func (m MissingEnvVarsError) Error() string {
+	if len(m.vars) == 0 {
+		return ""
+	}
+	varsstr := make([]string, 0, len(m.vars))
+	for _, v := range m.vars {
+		varsstr = append(varsstr, v.Error())
+	}
+	return strings.Join(varsstr, ",")
+}
+
+type InvalidEnvVarsError struct {
+	vars []error
+}
+
+func (m InvalidEnvVarsError) Unwrap() []error {
+	return m.vars
+}
+
+func (m InvalidEnvVarsError) Error() string {
+	if len(m.vars) == 0 {
+		return ""
+	}
+	varsstr := make([]string, 0, len(m.vars))
+	for _, v := range m.vars {
+		varsstr = append(varsstr, v.Error())
+	}
+	return strings.Join(varsstr, ",")
+}
 `))
