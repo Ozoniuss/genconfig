@@ -6,7 +6,6 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"text/template"
@@ -38,11 +37,7 @@ func printline(debug bool, a ...any) {
 
 func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoader, outputDotenv string, testBuildTag string, debug bool) error {
 
-	prefix, err := getProjectNamePrefix(projectPrefix)
-	if err != nil {
-		panic(err)
-	}
-	printformat(debug, "using project name prefix %s\n", prefix)
+	printformat(debug, "using project name prefix %s\n", projectPrefix)
 
 	outputImports := setupImportsAlwaysNeeded()
 
@@ -63,7 +58,7 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoad
 	configTypeDefinition := allTopLevelStructDefinitions[configStructName]
 	parentNames := []string{}
 
-	insertTemplateDataEntryForStruct(configTypeDefinition, configStructName, &parentNames, prefix, outputImports, &fields, allTopLevelStructDefinitions, debug)
+	insertTemplateDataEntryForStruct(configTypeDefinition, configStructName, &parentNames, projectPrefix, outputImports, &fields, allTopLevelStructDefinitions, debug)
 
 	importList := generateImportsListAsTemplateString(outputImports)
 
@@ -78,7 +73,7 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoad
 		TestBuildTag string
 		ImportList   string
 	}{
-		Prefix:       prefix,
+		Prefix:       projectPrefix,
 		StructName:   configStructName,
 		Fields:       fields,
 		TestBuildTag: testBuildTag,
@@ -221,25 +216,6 @@ func generateImportsListAsTemplateString(outputImports map[string]struct{}) stri
 	slices.Sort(pkgs) // Go 1.21+
 	importList := strings.Join(pkgs, "\n    ")
 	return importList
-}
-
-func getProjectNamePrefix(suppliedPrefix string) (string, error) {
-	if suppliedPrefix != "" {
-		return suppliedPrefix, nil
-	}
-	var prefix string
-	if len(os.Args) > 1 {
-		prefix = os.Args[1]
-	} else {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return "", fmt.Errorf("cannot get working directory: %w", err)
-		}
-		base := filepath.Base(cwd)
-		prefix = base
-	}
-	prefix = strings.ToUpper(prefix)
-	return prefix, nil
 }
 
 func getAllTopLevelStructDefinitions(node *ast.File) map[string]*ast.StructType {
