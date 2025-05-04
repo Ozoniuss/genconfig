@@ -80,7 +80,7 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputGene
 	if err != nil {
 		return fmt.Errorf("could not parse file with config struct: %w", err)
 	}
-	if node.Name == nil {
+	if node == nil || node.Name == nil {
 		printline(debug, "node name is nil")
 		return errors.New("could not parse package name")
 	}

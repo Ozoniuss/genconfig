@@ -1,64 +1,28 @@
 //go:build testcases
 // +build testcases
 
-package main
+package test
 
 import (
 	"fmt"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/Ozoniuss/genconfig/test/t1"
+	"github.com/Ozoniuss/genconfig/test/t2"
+	"github.com/Ozoniuss/genconfig/test/t3"
+	"github.com/Ozoniuss/genconfig/test/t4"
+	"github.com/Ozoniuss/genconfig/test/t5"
+	"github.com/Ozoniuss/genconfig/test/t6"
 )
 
-type TestConfig1 struct {
-	AppName string
-	Debug   bool
-	Timeout time.Duration
-	Retries int
-}
-
-type TestConfigCopy struct {
-	AppName string
-	Debug   bool
-	Timeout time.Duration
-	Retries int
-}
-
-type TestConfigInts struct {
-	Int8Val  int8
-	Int16Val int16
-	Int32Val int32
-	Int64Val int64
-}
-
-type Nested struct {
-	InnerStr  string
-	InnerBool bool
-}
-
-type TestConfigNested struct {
-	AppName string
-	Nested  Nested
-}
-
-type TestConfigMixed struct {
-	UInt8Val   uint8
-	UInt32Val  uint32
-	Float32Val float32
-	Float64Val float64
-}
-
-// TestConfigUints: unsigned ints
-type TestConfigUints struct {
-	Uint8Val  uint8
-	Uint16Val uint16
-	Uint32Val uint32
-	Uint64Val uint64
-}
-type TestConfigFloats struct {
-	Float32Val float32
-	Float64Val float64
-}
+type TestConfig1 = t1.TestConfig1
+type TestConfigCopy = t2.TestConfigCopy
+type TestConfigInts = t3.TestConfigInts
+type TestConfigUints = t4.TestConfigUints
+type TestConfigFloats = t5.TestConfigFloats
+type TestConfigNested = t6.TestConfigNested
 
 func callLoadFuncByName(t *testing.T, tc TestCase) (interface{}, error) {
 	t.Helper()
@@ -161,7 +125,7 @@ func getTestCases() []TestCase {
 			},
 			Expected: TestConfigNested{
 				AppName: "NestedApp",
-				Nested: Nested{
+				Nested: t6.Nested{
 					InnerStr:  "hello",
 					InnerBool: true,
 				},
@@ -175,12 +139,12 @@ func getTestCases() []TestCase {
 
 	// Build the registry manually (unfortunately Go can't discover this automatically)
 	loadFuncRegistry = map[string]any{
-		"LoadTestConfig1":      LoadTestConfig1,
-		"LoadTestConfigCopy":   LoadTestConfigCopy,
-		"LoadTestConfigInts":   LoadTestConfigInts,
-		"LoadTestConfigUints":  LoadTestConfigUints,
-		"LoadTestConfigFloats": LoadTestConfigFloats,
-		"LoadTestConfigNested": LoadTestConfigNested,
+		"LoadTestConfig1":      t1.LoadTestConfig1,
+		"LoadTestConfigCopy":   t2.LoadTestConfigCopy,
+		"LoadTestConfigInts":   t3.LoadTestConfigInts,
+		"LoadTestConfigUints":  t4.LoadTestConfigUints,
+		"LoadTestConfigFloats": t5.LoadTestConfigFloats,
+		"LoadTestConfigNested": t6.LoadTestConfigNested,
 	}
 
 	return tcs
