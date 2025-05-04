@@ -6,6 +6,7 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"text/template"
@@ -35,9 +36,39 @@ func printline(debug bool, a ...any) {
 	}
 }
 
-func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoader, outputDotenv string, testBuildTag string, debug bool) error {
+func createOutputFile(outputGeneratedConfigFile string) (*os.File, error) {
+	outFullPath, err := filepath.Abs(outputGeneratedConfigFile)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get expected absolute path: %w", err)
+	}
+	baseDir := filepath.Dir(outFullPath)
+	fileName := filepath.Base(outFullPath)
+
+	if !strings.HasSuffix(fileName, ".go") {
+		outFullPath = outFullPath + ".go"
+		fmt.Fprintf(os.Stderr, "output file %s does not have .go suffix; adding it", fileName)
+	}
+
+	err = os.MkdirAll(baseDir, 0750)
+	if err != nil {
+		return nil, fmt.Errorf("could not create directory for output file: %w", err)
+	}
+	generatedFile, err := os.Create(outFullPath)
+	if err != nil {
+		return nil, fmt.Errorf("cannot generate output file %s: %w", outFullPath, err)
+	}
+	return generatedFile, nil
+}
+
+func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputGeneratedConfigFile, outputDotenv string, testBuildTag string, debug bool) error {
 
 	printformat(debug, "using project name prefix %s\n", projectPrefix)
+
+	generatedFile, err := createOutputFile(outputGeneratedConfigFile)
+	if err != nil {
+		return fmt.Errorf("could not create output config loader file: %w", err)
+	}
+	defer generatedFile.Close()
 
 	outputImports := setupImportsAlwaysNeeded()
 
@@ -62,11 +93,7 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputLoad
 
 	importList := generateImportsListAsTemplateString(outputImports)
 
-	// Generate config_gen.go
-	outGo, _ := os.Create(outputLoader)
-	defer outGo.Close()
-
-	goTemplate.Execute(outGo, struct {
+	goTemplate.Execute(generatedFile, struct {
 		Prefix       string
 		StructName   string
 		Fields       []TemplateData
