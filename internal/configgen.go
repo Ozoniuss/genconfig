@@ -1,6 +1,7 @@
 package genconfig
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -14,6 +15,7 @@ import (
 )
 
 type TemplateData struct {
+	PackageName    string
 	Name           string
 	AssignmentName string
 	EnvVar         string
@@ -76,8 +78,14 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputGene
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, inputFile, nil, parser.AllErrors)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("could not parse file with config struct: %w", err)
 	}
+	if node.Name == nil {
+		printline(debug, "node name is nil")
+		return errors.New("could not parse package name")
+	}
+	packageName := node.Name.Name
+	printformat(debug, "using package name %s", packageName)
 
 	var fields []TemplateData
 
@@ -99,12 +107,14 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputGene
 		Fields       []TemplateData
 		TestBuildTag string
 		ImportList   string
+		PackageName  string
 	}{
 		Prefix:       projectPrefix,
 		StructName:   configStructName,
 		Fields:       fields,
 		TestBuildTag: testBuildTag,
 		ImportList:   importList,
+		PackageName:  packageName,
 	})
 
 	printline(debug, fields)
@@ -341,7 +351,7 @@ var goTemplate = template.Must(template.New("config").Parse(`// Code generated b
 
 {{- end }}
 
-package main
+package {{ .PackageName }}
 
 import (
     {{ .ImportList }}
