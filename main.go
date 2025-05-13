@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	gncfg "github.com/Ozoniuss/genconfig/internal"
 )
@@ -39,6 +40,19 @@ func main() {
 		os.Exit(0)
 	}
 
+	// At the moment, all paths supplied are relative to where the executable
+	// is called. This means if you have a certain parent for the input config,
+	// you need the same parent for the output config. However, there is a
+	// reasonable use case in which you may provide the path of the parent, but
+	// don't want to provide a path for the output (the reverse doesn't really
+	// make a reasonable use case). In that case, detect only the input path
+	// was specified, and appent that path's parent to the output too.
+	//
+	// For now, the generated config name is not configurable, but will be
+	// in the future.
+	parent, _ := filepath.Split(flagConfigFilePath)
+	outputConfigLoaderPath := parent + defaultOutputConfigLoader
+
 	var configFilePath string
 	if flagConfigFilePath != "" {
 		configFilePath = flagConfigFilePath
@@ -58,7 +72,7 @@ func main() {
 
 	fmt.Printf("Using the struct %s from file %s\n", flagConfigStructName, configFilePath)
 
-	err := gncfg.GenerateConfigLoader(flagProjectName, flagConfigStructName, configFilePath, defaultOutputConfigLoader, defaultOutputDotenv, flagOutputDotenvFile, flagDebugLogs)
+	err := gncfg.GenerateConfigLoader(flagProjectName, flagConfigStructName, configFilePath, outputConfigLoaderPath, defaultOutputDotenv, flagOutputDotenvFile, flagDebugLogs)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "could not generate config: %s", err.Error())
 		os.Exit(1)

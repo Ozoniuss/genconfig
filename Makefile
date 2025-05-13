@@ -5,7 +5,7 @@ unit-tests:
 	chmod +x ./test/run.sh; cd ./test; ./run.sh; cd ..
 
 example1:
-	cd examples/01-direct-call; go run generate.go; cd ../..
+	go build -o examples/01-direct-call/genconfig; cd examples/01-direct-call; go run generate.go; cd ../..
 
 example2:
 	cd examples/02-executable-gogenerate; go generate ./...; cd ../..
@@ -17,4 +17,4 @@ example4:
 	cd examples/04-tools-dot-go; go generate ./...; cd ../..
 
 example5:
-	cd examples/05-executable-direct; chmod +x run.sh; ./run.sh; cd ../..
+	go build -o examples/05-executable-direct/genconfig; cd examples/05-executable-direct; chmod +x run.sh; ./run.sh; cd ../..
