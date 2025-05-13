@@ -140,6 +140,8 @@ There are several ways you can use `genconfig`. The flag `-struct` is used to de
 
 When using the `//go:generate` directive, you can generate your loader by calling `go generate` from the root of your module.
 
+You can find an example for all of this methods in the `examples` directory.
+
 ### go tool (Go 1.24+)
 
 ```

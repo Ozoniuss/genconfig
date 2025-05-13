@@ -18,8 +18,8 @@ const (
     _PORT_ENV = "_PORT"
     _PORT32_ENV = "_PORT32"
     _PORT16_ENV = "_PORT16"
-    _NE_NAME_ENV = "_NE_NAME"
-    _NE_AGE_ENV = "_NE_AGE"
+    _NES_NAME_ENV = "_NES_NAME"
+    _NES_AGE_ENV = "_NES_AGE"
 )
 
 var (
@@ -36,9 +36,9 @@ var (
     ErrPort32EnvInvalid = errors.New(_PORT32_ENV)
     ErrPort16EnvMissing = errors.New(_PORT16_ENV)
     ErrPort16EnvInvalid = errors.New(_PORT16_ENV)
-    ErrNeNameEnvMissing = errors.New(_NE_NAME_ENV)
-    ErrNeAgeEnvMissing = errors.New(_NE_AGE_ENV)
-    ErrNeAgeEnvInvalid = errors.New(_NE_AGE_ENV)
+    ErrNesNameEnvMissing = errors.New(_NES_NAME_ENV)
+    ErrNesAgeEnvMissing = errors.New(_NES_AGE_ENV)
+    ErrNesAgeEnvInvalid = errors.New(_NES_AGE_ENV)
 )
 
 func LoadConfig() (Config, error) {
@@ -117,21 +117,21 @@ func LoadConfig() (Config, error) {
             config.Port16 = int16(parsed)
         }
     }
-    val_Ne_Name, ok := os.LookupEnv(_NE_NAME_ENV)
+    val_Nes_Name, ok := os.LookupEnv(_NES_NAME_ENV)
     if !ok {
-        missingVars = append(missingVars, ErrNeNameEnvMissing)
+        missingVars = append(missingVars, ErrNesNameEnvMissing)
     } else {
-        config.Ne.Name = val_Ne_Name
+        config.Nes.Name = val_Nes_Name
     }
-    val_Ne_Age, ok := os.LookupEnv(_NE_AGE_ENV)
+    val_Nes_Age, ok := os.LookupEnv(_NES_AGE_ENV)
     if !ok {
-        missingVars = append(missingVars, ErrNeAgeEnvMissing)
+        missingVars = append(missingVars, ErrNesAgeEnvMissing)
     } else {
-        parsed, err := strconv.Atoi(val_Ne_Age)
+        parsed, err := strconv.Atoi(val_Nes_Age)
         if err != nil {
-            formatVars = append(formatVars, ErrNeAgeEnvInvalid)
+            formatVars = append(formatVars, ErrNesAgeEnvInvalid)
         } else {
-            config.Ne.Age = parsed
+            config.Nes.Age = parsed
         }
     }
 

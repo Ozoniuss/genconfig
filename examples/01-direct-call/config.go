@@ -10,7 +10,7 @@ type Config struct {
 	Port32      uint32
 	Port16      int16
 
-	Ne Nested
+	Nes Nested
 }
 
 type Nested struct {
