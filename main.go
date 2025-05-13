@@ -21,13 +21,16 @@ var (
 	flagPrintUsage       bool
 	flagProjectName      string
 	flagConfigFilePath   string
+	flagDebugLogs        bool
 )
 
 func main() {
+
 	flag.StringVar(&flagProjectName, "project", defaultProjectName, "Name of the project. If not empty, will be used as prefix for environment variables.")
 	flag.StringVar(&flagConfigStructName, "struct", defaultConfigStructName, "Name of the config struct.")
 	flag.StringVar(&flagConfigFilePath, "path", "", "File path of the config struct. Defaults to the location of the go:generate directive. Note that because of this, running genconfig as an executable without providing this flag can behave unpredictably.")
 	flag.StringVar(&flagOutputDotenvFile, "env", defaultOutputDotenv, "Name of the output .env file, if you want to generate one with all possible config values. An empty value will not generate a .env file.")
+	flag.BoolVar(&flagDebugLogs, "debug", false, "Debug generation issues.")
 	flag.BoolVar(&flagPrintUsage, "help", false, "Show usage.")
 
 	flag.Parse()
@@ -55,7 +58,7 @@ func main() {
 
 	fmt.Printf("Using the struct %s from file %s\n", flagConfigStructName, configFilePath)
 
-	err := gncfg.GenerateConfigLoader(flagProjectName, flagConfigStructName, configFilePath, defaultOutputConfigLoader, defaultOutputDotenv, flagOutputDotenvFile, false)
+	err := gncfg.GenerateConfigLoader(flagProjectName, flagConfigStructName, configFilePath, defaultOutputConfigLoader, defaultOutputDotenv, flagOutputDotenvFile, flagDebugLogs)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "could not generate config: %s", err.Error())
 		os.Exit(1)
