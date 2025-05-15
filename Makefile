@@ -18,3 +18,5 @@ example4:
 
 example5:
 	go build -o examples/05-executable-direct/genconfig; cd examples/05-executable-direct; chmod +x run.sh; ./run.sh; cd ../..
+
+update-all: unit-tests example1 example2 example3 example4 example5
