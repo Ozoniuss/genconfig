@@ -4,12 +4,12 @@
 
 ## Example
 
-See [Usage](#usage) for more detailed instructions.
+See [Installation and Usage](#installation-and-usage) for more detailed instructions.
 
 The struct `Config` below defines your project's settings:
 
 ```go
-//go:generate go tool genconfig -struct=Config -project=Myapp
+//go:generate go tool genconfig -struct=Config -project=App
 type Config struct {
 	Apikey   string
 	Loglevel string
@@ -171,13 +171,11 @@ func main() {
 Optionally, it can also generate a `.env` file containing all the environment variables that it reads (without setting a value for them):
 
 ```
-MYAPP_HDD_SYNC_PATH=
-MYAPP_DRY_RUN=
-MYAPP_LOL=
-MYAPP_TIMEOUT=
-MYAPP_PORT=
-MYAPP_PORT32=
-MYAPP_PORT16=
+APP_APIKEY=
+APP_LOGLEVEL=
+APP_SERVER_HOST=
+APP_SERVER_PORT=
+APP_SERVER_SHUTDOWNINTERVAL=
 ```
 
 ## Installation and Usage
@@ -186,7 +184,7 @@ There are several ways you can use `genconfig`. The flag `-struct` is used to de
 
 When using the `//go:generate` directive, you can generate your loader by calling `go generate` from the root of your module.
 
-You can find an example for all of this methods in the `examples` directory.
+All methods illustrated below have a working example in the `examples` directory. Based on your preferred approach, running the generator may vary. Please refer to the instructions for each approach for more details.
 
 ### go tool (Go 1.24+)
 
@@ -243,16 +241,26 @@ or call it directly from the command line:
 genconfig -struct=Config -path=config.go -project=Myapp
 ```
 
-## Usage
-
 > ⚠️ You need to provide the `-path` flag if you use the executable directly, otherwise `genconfig` will not be able to locate your config.
 
-Based on your project's config struct definition, it creates:
+## Considerations
 
-- A set of environment variables corresponding to each field of your config struct (see [rules](#how-are-environment-variable-names-generated));
-- A set of exported constants corresponding to each environment variable;
-- A config loader .go file including an exported `LoadConfig()` function that is able to read those values from environment variables, and return errors if those values are not set (empty) or not parsable to the config's type.
+`genconfig` is very opinionated in its approach. It specifically assumes that:
+
+- There must be only one exported config struct definition for the whole project.
+- The generated config loader will be created in the same package as the config struct definition. This is to allow one import to reference both the `LoadConfig()` function and the config struct definition, as well as to make it easier for the `LoadConfig()` function to return that struct.
+- For each struct field, an associated environment variable name will automatically be created and follows [this rule](https://github.com/Ozoniuss/genconfig/blob/283a5252de20a4fa9693499412b861b348ea1a75/internal/configgen.go#L196). The name is not configurable.
+- Every environment variable must be set explicity (no empty values are allowed), thus there are no defaults. Also, they must be parseable into their corresponding type in the config struct. In order to facilitate explicitly setting them, `genconfig` can be configured to output a .env file where they're all set to the empty value.
+
+> Note: I'm open to changing those assumptions in the future.
 
 ## Supprted parsing functions
 
-## How are environment variable names generated?
+Based on the field's type, a different parsing function will be used to convert its value from string. Currently, the following ones are supported:
+
+- `strconv.ParseInt` for all integer types
+- `strconv.ParseFloat` for all float types
+- `strconv.ParseBool` for bool
+- `time.ParseDuration` for `time.Duration`
+
+Support for parsing more types (including custom parsing functions) may be added in the future.
