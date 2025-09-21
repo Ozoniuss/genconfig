@@ -62,6 +62,24 @@ func createOutputFile(outputGeneratedConfigFile string) (*os.File, error) {
 	return generatedFile, nil
 }
 
+func createOutputDotenvFile(outputGeneratedDotenvFile string) (*os.File, error) {
+	outFullPath, err := filepath.Abs(outputGeneratedDotenvFile)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get expected absolute path: %w", err)
+	}
+	baseDir := filepath.Dir(outFullPath)
+
+	err = os.MkdirAll(baseDir, 0750)
+	if err != nil {
+		return nil, fmt.Errorf("could not create directory for output file: %w", err)
+	}
+	generatedFile, err := os.Create(outFullPath)
+	if err != nil {
+		return nil, fmt.Errorf("cannot generate output file %s: %w", outFullPath, err)
+	}
+	return generatedFile, nil
+}
+
 func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputGeneratedConfigFile, outputDotenv string, testBuildTag string, debug bool) error {
 
 	printformat(debug, "using project name prefix %s\n", projectPrefix)
@@ -121,13 +139,15 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputGene
 
 	// Generate .env
 	if outputDotenv != "" {
-		outEnv, _ := os.Create(outputDotenv)
+		outEnv, err := createOutputDotenvFile(outputDotenv)
+		if err != nil {
+			return fmt.Errorf("could not generate dotenv file: %w", err)
+		}
 		defer outEnv.Close()
 		for _, field := range fields {
 			fmt.Fprintf(outEnv, "%s=\n", field.EnvVar)
 		}
 	}
-
 	return nil
 }
 

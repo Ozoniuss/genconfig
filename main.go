@@ -72,7 +72,7 @@ func main() {
 
 	fmt.Printf("Using the struct %s from file %s\n", flagConfigStructName, configFilePath)
 
-	err := gncfg.GenerateConfigLoader(flagProjectName, flagConfigStructName, configFilePath, outputConfigLoaderPath, defaultOutputDotenv, flagOutputDotenvFile, flagDebugLogs)
+	err := gncfg.GenerateConfigLoader(flagProjectName, flagConfigStructName, configFilePath, outputConfigLoaderPath, flagOutputDotenvFile, "", flagDebugLogs)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "could not generate config: %s", err.Error())
 		os.Exit(1)
