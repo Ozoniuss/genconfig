@@ -1,9 +1,13 @@
 default:
     just -l
 
+# Run this before every commit to ensure tests pass and all examples are regenerated
+update-all: unit-tests example0 example1 example2 example3 example4 example5
+
 unit-tests:
     chmod +x ./test/run.sh; cd ./test; ./run.sh; cd ..
 
+# example0 is the example shown in the README. Be sure to change the README if the output ever changes.
 example0:
     go build -o examples/00-docs/genconfig; cd examples/00-docs; go run generate.go; cd ../..
 
@@ -21,5 +25,3 @@ example4:
 
 example5:
     go build -o examples/05-executable-direct/genconfig; cd examples/05-executable-direct; chmod +x run.sh; ./run.sh; cd ../..
-
-update-all: unit-tests example0 example1 example2 example3 example4 example5
