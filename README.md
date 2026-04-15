@@ -105,7 +105,7 @@ func LoadConfig() (Config, error) {
 			verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
 		}
 		if len(formatVars) > 0 {
-			verr = errors.Join(verr, InvalidEnvVarsError{vars: missingVars})
+			verr = errors.Join(verr, InvalidEnvVarsError{vars: formatVars})
 		}
 		return Config{}, verr
 	}

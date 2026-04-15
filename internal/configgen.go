@@ -1,9 +1,11 @@
 package genconfig
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"go/ast"
+	"go/format"
 	"go/parser"
 	"go/token"
 	"os"
@@ -119,7 +121,8 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputGene
 
 	importList := generateImportsListAsTemplateString(outputImports)
 
-	goTemplate.Execute(generatedFile, struct {
+	var buf bytes.Buffer
+	goTemplate.Execute(&buf, struct {
 		Prefix       string
 		StructName   string
 		Fields       []TemplateData
@@ -134,6 +137,11 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputGene
 		ImportList:   importList,
 		PackageName:  packageName,
 	})
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return fmt.Errorf("could not format generated code: %w", err)
+	}
+	generatedFile.Write(formatted)
 
 	printline(debug, fields)
 
@@ -271,7 +279,7 @@ func generateImportsListAsTemplateString(outputImports map[string]struct{}) stri
 		pkgs = append(pkgs, p)
 	}
 	slices.Sort(pkgs) // Go 1.21+
-	importList := strings.Join(pkgs, "\n    ")
+	importList := strings.Join(pkgs, "\n\t")
 	return importList
 }
 
@@ -374,79 +382,79 @@ var goTemplate = template.Must(template.New("config").Parse(`// Code generated b
 package {{ .PackageName }}
 
 import (
-    {{ .ImportList }}
+	{{ .ImportList }}
 )
 
 const (
 {{- range .Fields }}
-    {{ .EnvVar }}_ENV = "{{ .EnvVar }}"
+	{{ .EnvVar }}_ENV = "{{ .EnvVar }}"
 {{- end }}
 )
 
 var (
 {{- range $f := .Fields }}
 {{- range $f.ErrorVars }}
-    {{ . }} = errors.New({{ $f.EnvVar }}_ENV)
+	{{ . }} = errors.New({{ $f.EnvVar }}_ENV)
 {{- end }}
 {{- end }}
 )
 
 func Load{{ .StructName }}() ({{ .StructName }}, error) {
-    var config {{ .StructName }}
-    var missingVars []error
-    var formatVars []error
+	var config {{ .StructName }}
+	var missingVars []error
+	var formatVars []error
 
 {{- range .Fields }}
-    {{ .AssignmentName }}, ok := os.LookupEnv({{ .EnvVar }}_ENV)
-    if !ok {
-        missingVars = append(missingVars, {{ index .ErrorVars 0 }})
-    } else {
-        {{- if eq .ParseFunc "raw" }}
-        config.{{ .Name }} = {{ .AssignmentName }}
-        {{- else if eq .ParseFunc "strconv.Atoi" }}
-        parsed, err := strconv.Atoi({{ .AssignmentName }})
-        if err != nil {
-            formatVars = append(formatVars, {{ index .ErrorVars 1 }})
-        } else {
-            config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
-        }
-        {{- else if or (eq .ParseFunc "strconv.ParseInt") (eq .ParseFunc "strconv.ParseUint") }}
-        parsed, err := {{ .ParseFunc }}({{ .AssignmentName }}, 10, {{ .BitSize }})
-        if err != nil {
-            formatVars = append(formatVars, {{ index .ErrorVars 1 }})
-        } else {
-            config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
-        }
+	{{ .AssignmentName }}, ok := os.LookupEnv({{ .EnvVar }}_ENV)
+	if !ok {
+		missingVars = append(missingVars, {{ index .ErrorVars 0 }})
+	} else {
+		{{- if eq .ParseFunc "raw" }}
+		config.{{ .Name }} = {{ .AssignmentName }}
+		{{- else if eq .ParseFunc "strconv.Atoi" }}
+		parsed, err := strconv.Atoi({{ .AssignmentName }})
+		if err != nil {
+			formatVars = append(formatVars, {{ index .ErrorVars 1 }})
+		} else {
+			config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
+		}
+		{{- else if or (eq .ParseFunc "strconv.ParseInt") (eq .ParseFunc "strconv.ParseUint") }}
+		parsed, err := {{ .ParseFunc }}({{ .AssignmentName }}, 10, {{ .BitSize }})
+		if err != nil {
+			formatVars = append(formatVars, {{ index .ErrorVars 1 }})
+		} else {
+			config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
+		}
 		{{- else if eq .ParseFunc "strconv.ParseFloat" }}
-        parsed, err := strconv.ParseFloat({{ .AssignmentName }}, {{ .BitSize }})
-        if err != nil {
-            formatVars = append(formatVars, {{ index .ErrorVars 1 }})
-        } else {
-            config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
-        }
-        {{- else }}
-        parsed, err := {{ .ParseFunc }}({{ .AssignmentName }})
-        if err != nil {
-            formatVars = append(formatVars, {{ index .ErrorVars 1 }})
-        } else {
-            config.{{ .Name }} = parsed
-        }
-        {{- end }}
-    }
+		parsed, err := strconv.ParseFloat({{ .AssignmentName }}, {{ .BitSize }})
+		if err != nil {
+			formatVars = append(formatVars, {{ index .ErrorVars 1 }})
+		} else {
+			config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
+		}
+		{{- else }}
+		parsed, err := {{ .ParseFunc }}({{ .AssignmentName }})
+		if err != nil {
+			formatVars = append(formatVars, {{ index .ErrorVars 1 }})
+		} else {
+			config.{{ .Name }} = parsed
+		}
+		{{- end }}
+	}
 {{- end }}
 
-    if len(missingVars) > 0 || len(formatVars) > 0 {
-        var verr error
-        if len(missingVars) > 0 {
-            verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
-        }
-        if len(formatVars) > 0 {
-            verr = errors.Join(verr, InvalidEnvVarsError{vars: missingVars})
-        }
-        return {{ .StructName }}{}, verr
-    }
+	if len(missingVars) > 0 || len(formatVars) > 0 {
+		var verr error
+		if len(missingVars) > 0 {
+			verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
+		}
+		if len(formatVars) > 0 {
+			verr = errors.Join(verr, InvalidEnvVarsError{vars: formatVars})
+		}
+		return {{ .StructName }}{}, verr
+	}
 
-    return config, nil
+	return config, nil
 }
 
 type MissingEnvVarsError struct {

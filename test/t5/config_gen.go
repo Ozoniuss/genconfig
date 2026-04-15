@@ -5,63 +5,63 @@
 package t5
 
 import (
-    "errors"
-    "os"
-    "strconv"
-    "strings"
+	"errors"
+	"os"
+	"strconv"
+	"strings"
 )
 
 const (
-    TESTCONFIGFLOATS_FLOAT32VAL_ENV = "TESTCONFIGFLOATS_FLOAT32VAL"
-    TESTCONFIGFLOATS_FLOAT64VAL_ENV = "TESTCONFIGFLOATS_FLOAT64VAL"
+	TESTCONFIGFLOATS_FLOAT32VAL_ENV = "TESTCONFIGFLOATS_FLOAT32VAL"
+	TESTCONFIGFLOATS_FLOAT64VAL_ENV = "TESTCONFIGFLOATS_FLOAT64VAL"
 )
 
 var (
-    ErrTestconfigfloatsFloat32valEnvMissing = errors.New(TESTCONFIGFLOATS_FLOAT32VAL_ENV)
-    ErrTestconfigfloatsFloat32valEnvInvalid = errors.New(TESTCONFIGFLOATS_FLOAT32VAL_ENV)
-    ErrTestconfigfloatsFloat64valEnvMissing = errors.New(TESTCONFIGFLOATS_FLOAT64VAL_ENV)
-    ErrTestconfigfloatsFloat64valEnvInvalid = errors.New(TESTCONFIGFLOATS_FLOAT64VAL_ENV)
+	ErrTestconfigfloatsFloat32valEnvMissing = errors.New(TESTCONFIGFLOATS_FLOAT32VAL_ENV)
+	ErrTestconfigfloatsFloat32valEnvInvalid = errors.New(TESTCONFIGFLOATS_FLOAT32VAL_ENV)
+	ErrTestconfigfloatsFloat64valEnvMissing = errors.New(TESTCONFIGFLOATS_FLOAT64VAL_ENV)
+	ErrTestconfigfloatsFloat64valEnvInvalid = errors.New(TESTCONFIGFLOATS_FLOAT64VAL_ENV)
 )
 
 func LoadTestConfigFloats() (TestConfigFloats, error) {
-    var config TestConfigFloats
-    var missingVars []error
-    var formatVars []error
-    val_Float32Val, ok := os.LookupEnv(TESTCONFIGFLOATS_FLOAT32VAL_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfigfloatsFloat32valEnvMissing)
-    } else {
-        parsed, err := strconv.ParseFloat(val_Float32Val, 32)
-        if err != nil {
-            formatVars = append(formatVars, ErrTestconfigfloatsFloat32valEnvInvalid)
-        } else {
-            config.Float32Val = float32(parsed)
-        }
-    }
-    val_Float64Val, ok := os.LookupEnv(TESTCONFIGFLOATS_FLOAT64VAL_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfigfloatsFloat64valEnvMissing)
-    } else {
-        parsed, err := strconv.ParseFloat(val_Float64Val, 64)
-        if err != nil {
-            formatVars = append(formatVars, ErrTestconfigfloatsFloat64valEnvInvalid)
-        } else {
-            config.Float64Val = parsed
-        }
-    }
+	var config TestConfigFloats
+	var missingVars []error
+	var formatVars []error
+	val_Float32Val, ok := os.LookupEnv(TESTCONFIGFLOATS_FLOAT32VAL_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfigfloatsFloat32valEnvMissing)
+	} else {
+		parsed, err := strconv.ParseFloat(val_Float32Val, 32)
+		if err != nil {
+			formatVars = append(formatVars, ErrTestconfigfloatsFloat32valEnvInvalid)
+		} else {
+			config.Float32Val = float32(parsed)
+		}
+	}
+	val_Float64Val, ok := os.LookupEnv(TESTCONFIGFLOATS_FLOAT64VAL_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfigfloatsFloat64valEnvMissing)
+	} else {
+		parsed, err := strconv.ParseFloat(val_Float64Val, 64)
+		if err != nil {
+			formatVars = append(formatVars, ErrTestconfigfloatsFloat64valEnvInvalid)
+		} else {
+			config.Float64Val = parsed
+		}
+	}
 
-    if len(missingVars) > 0 || len(formatVars) > 0 {
-        var verr error
-        if len(missingVars) > 0 {
-            verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
-        }
-        if len(formatVars) > 0 {
-            verr = errors.Join(verr, InvalidEnvVarsError{vars: missingVars})
-        }
-        return TestConfigFloats{}, verr
-    }
+	if len(missingVars) > 0 || len(formatVars) > 0 {
+		var verr error
+		if len(missingVars) > 0 {
+			verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
+		}
+		if len(formatVars) > 0 {
+			verr = errors.Join(verr, InvalidEnvVarsError{vars: formatVars})
+		}
+		return TestConfigFloats{}, verr
+	}
 
-    return config, nil
+	return config, nil
 }
 
 type MissingEnvVarsError struct {

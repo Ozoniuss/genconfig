@@ -5,65 +5,65 @@
 package t6
 
 import (
-    "errors"
-    "os"
-    "strconv"
-    "strings"
+	"errors"
+	"os"
+	"strconv"
+	"strings"
 )
 
 const (
-    TESTCONFIGNESTED_APPNAME_ENV = "TESTCONFIGNESTED_APPNAME"
-    TESTCONFIGNESTED_NESTED_INNERSTR_ENV = "TESTCONFIGNESTED_NESTED_INNERSTR"
-    TESTCONFIGNESTED_NESTED_INNERBOOL_ENV = "TESTCONFIGNESTED_NESTED_INNERBOOL"
+	TESTCONFIGNESTED_APPNAME_ENV          = "TESTCONFIGNESTED_APPNAME"
+	TESTCONFIGNESTED_NESTED_INNERSTR_ENV  = "TESTCONFIGNESTED_NESTED_INNERSTR"
+	TESTCONFIGNESTED_NESTED_INNERBOOL_ENV = "TESTCONFIGNESTED_NESTED_INNERBOOL"
 )
 
 var (
-    ErrTestconfignestedAppnameEnvMissing = errors.New(TESTCONFIGNESTED_APPNAME_ENV)
-    ErrTestconfignestedNestedInnerstrEnvMissing = errors.New(TESTCONFIGNESTED_NESTED_INNERSTR_ENV)
-    ErrTestconfignestedNestedInnerboolEnvMissing = errors.New(TESTCONFIGNESTED_NESTED_INNERBOOL_ENV)
-    ErrTestconfignestedNestedInnerboolEnvInvalid = errors.New(TESTCONFIGNESTED_NESTED_INNERBOOL_ENV)
+	ErrTestconfignestedAppnameEnvMissing         = errors.New(TESTCONFIGNESTED_APPNAME_ENV)
+	ErrTestconfignestedNestedInnerstrEnvMissing  = errors.New(TESTCONFIGNESTED_NESTED_INNERSTR_ENV)
+	ErrTestconfignestedNestedInnerboolEnvMissing = errors.New(TESTCONFIGNESTED_NESTED_INNERBOOL_ENV)
+	ErrTestconfignestedNestedInnerboolEnvInvalid = errors.New(TESTCONFIGNESTED_NESTED_INNERBOOL_ENV)
 )
 
 func LoadTestConfigNested() (TestConfigNested, error) {
-    var config TestConfigNested
-    var missingVars []error
-    var formatVars []error
-    val_AppName, ok := os.LookupEnv(TESTCONFIGNESTED_APPNAME_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfignestedAppnameEnvMissing)
-    } else {
-        config.AppName = val_AppName
-    }
-    val_Nested_InnerStr, ok := os.LookupEnv(TESTCONFIGNESTED_NESTED_INNERSTR_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfignestedNestedInnerstrEnvMissing)
-    } else {
-        config.Nested.InnerStr = val_Nested_InnerStr
-    }
-    val_Nested_InnerBool, ok := os.LookupEnv(TESTCONFIGNESTED_NESTED_INNERBOOL_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfignestedNestedInnerboolEnvMissing)
-    } else {
-        parsed, err := strconv.ParseBool(val_Nested_InnerBool)
-        if err != nil {
-            formatVars = append(formatVars, ErrTestconfignestedNestedInnerboolEnvInvalid)
-        } else {
-            config.Nested.InnerBool = parsed
-        }
-    }
+	var config TestConfigNested
+	var missingVars []error
+	var formatVars []error
+	val_AppName, ok := os.LookupEnv(TESTCONFIGNESTED_APPNAME_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfignestedAppnameEnvMissing)
+	} else {
+		config.AppName = val_AppName
+	}
+	val_Nested_InnerStr, ok := os.LookupEnv(TESTCONFIGNESTED_NESTED_INNERSTR_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfignestedNestedInnerstrEnvMissing)
+	} else {
+		config.Nested.InnerStr = val_Nested_InnerStr
+	}
+	val_Nested_InnerBool, ok := os.LookupEnv(TESTCONFIGNESTED_NESTED_INNERBOOL_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfignestedNestedInnerboolEnvMissing)
+	} else {
+		parsed, err := strconv.ParseBool(val_Nested_InnerBool)
+		if err != nil {
+			formatVars = append(formatVars, ErrTestconfignestedNestedInnerboolEnvInvalid)
+		} else {
+			config.Nested.InnerBool = parsed
+		}
+	}
 
-    if len(missingVars) > 0 || len(formatVars) > 0 {
-        var verr error
-        if len(missingVars) > 0 {
-            verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
-        }
-        if len(formatVars) > 0 {
-            verr = errors.Join(verr, InvalidEnvVarsError{vars: missingVars})
-        }
-        return TestConfigNested{}, verr
-    }
+	if len(missingVars) > 0 || len(formatVars) > 0 {
+		var verr error
+		if len(missingVars) > 0 {
+			verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
+		}
+		if len(formatVars) > 0 {
+			verr = errors.Join(verr, InvalidEnvVarsError{vars: formatVars})
+		}
+		return TestConfigNested{}, verr
+	}
 
-    return config, nil
+	return config, nil
 }
 
 type MissingEnvVarsError struct {

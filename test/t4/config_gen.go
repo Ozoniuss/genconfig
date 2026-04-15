@@ -5,91 +5,91 @@
 package t4
 
 import (
-    "errors"
-    "os"
-    "strconv"
-    "strings"
+	"errors"
+	"os"
+	"strconv"
+	"strings"
 )
 
 const (
-    TESTCONFIGUINTS_UINT8VAL_ENV = "TESTCONFIGUINTS_UINT8VAL"
-    TESTCONFIGUINTS_UINT16VAL_ENV = "TESTCONFIGUINTS_UINT16VAL"
-    TESTCONFIGUINTS_UINT32VAL_ENV = "TESTCONFIGUINTS_UINT32VAL"
-    TESTCONFIGUINTS_UINT64VAL_ENV = "TESTCONFIGUINTS_UINT64VAL"
+	TESTCONFIGUINTS_UINT8VAL_ENV  = "TESTCONFIGUINTS_UINT8VAL"
+	TESTCONFIGUINTS_UINT16VAL_ENV = "TESTCONFIGUINTS_UINT16VAL"
+	TESTCONFIGUINTS_UINT32VAL_ENV = "TESTCONFIGUINTS_UINT32VAL"
+	TESTCONFIGUINTS_UINT64VAL_ENV = "TESTCONFIGUINTS_UINT64VAL"
 )
 
 var (
-    ErrTestconfiguintsUint8valEnvMissing = errors.New(TESTCONFIGUINTS_UINT8VAL_ENV)
-    ErrTestconfiguintsUint8valEnvInvalid = errors.New(TESTCONFIGUINTS_UINT8VAL_ENV)
-    ErrTestconfiguintsUint16valEnvMissing = errors.New(TESTCONFIGUINTS_UINT16VAL_ENV)
-    ErrTestconfiguintsUint16valEnvInvalid = errors.New(TESTCONFIGUINTS_UINT16VAL_ENV)
-    ErrTestconfiguintsUint32valEnvMissing = errors.New(TESTCONFIGUINTS_UINT32VAL_ENV)
-    ErrTestconfiguintsUint32valEnvInvalid = errors.New(TESTCONFIGUINTS_UINT32VAL_ENV)
-    ErrTestconfiguintsUint64valEnvMissing = errors.New(TESTCONFIGUINTS_UINT64VAL_ENV)
-    ErrTestconfiguintsUint64valEnvInvalid = errors.New(TESTCONFIGUINTS_UINT64VAL_ENV)
+	ErrTestconfiguintsUint8valEnvMissing  = errors.New(TESTCONFIGUINTS_UINT8VAL_ENV)
+	ErrTestconfiguintsUint8valEnvInvalid  = errors.New(TESTCONFIGUINTS_UINT8VAL_ENV)
+	ErrTestconfiguintsUint16valEnvMissing = errors.New(TESTCONFIGUINTS_UINT16VAL_ENV)
+	ErrTestconfiguintsUint16valEnvInvalid = errors.New(TESTCONFIGUINTS_UINT16VAL_ENV)
+	ErrTestconfiguintsUint32valEnvMissing = errors.New(TESTCONFIGUINTS_UINT32VAL_ENV)
+	ErrTestconfiguintsUint32valEnvInvalid = errors.New(TESTCONFIGUINTS_UINT32VAL_ENV)
+	ErrTestconfiguintsUint64valEnvMissing = errors.New(TESTCONFIGUINTS_UINT64VAL_ENV)
+	ErrTestconfiguintsUint64valEnvInvalid = errors.New(TESTCONFIGUINTS_UINT64VAL_ENV)
 )
 
 func LoadTestConfigUints() (TestConfigUints, error) {
-    var config TestConfigUints
-    var missingVars []error
-    var formatVars []error
-    val_Uint8Val, ok := os.LookupEnv(TESTCONFIGUINTS_UINT8VAL_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfiguintsUint8valEnvMissing)
-    } else {
-        parsed, err := strconv.ParseUint(val_Uint8Val, 10, 8)
-        if err != nil {
-            formatVars = append(formatVars, ErrTestconfiguintsUint8valEnvInvalid)
-        } else {
-            config.Uint8Val = uint8(parsed)
-        }
-    }
-    val_Uint16Val, ok := os.LookupEnv(TESTCONFIGUINTS_UINT16VAL_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfiguintsUint16valEnvMissing)
-    } else {
-        parsed, err := strconv.ParseUint(val_Uint16Val, 10, 16)
-        if err != nil {
-            formatVars = append(formatVars, ErrTestconfiguintsUint16valEnvInvalid)
-        } else {
-            config.Uint16Val = uint16(parsed)
-        }
-    }
-    val_Uint32Val, ok := os.LookupEnv(TESTCONFIGUINTS_UINT32VAL_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfiguintsUint32valEnvMissing)
-    } else {
-        parsed, err := strconv.ParseUint(val_Uint32Val, 10, 32)
-        if err != nil {
-            formatVars = append(formatVars, ErrTestconfiguintsUint32valEnvInvalid)
-        } else {
-            config.Uint32Val = uint32(parsed)
-        }
-    }
-    val_Uint64Val, ok := os.LookupEnv(TESTCONFIGUINTS_UINT64VAL_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfiguintsUint64valEnvMissing)
-    } else {
-        parsed, err := strconv.ParseUint(val_Uint64Val, 10, 64)
-        if err != nil {
-            formatVars = append(formatVars, ErrTestconfiguintsUint64valEnvInvalid)
-        } else {
-            config.Uint64Val = uint64(parsed)
-        }
-    }
+	var config TestConfigUints
+	var missingVars []error
+	var formatVars []error
+	val_Uint8Val, ok := os.LookupEnv(TESTCONFIGUINTS_UINT8VAL_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfiguintsUint8valEnvMissing)
+	} else {
+		parsed, err := strconv.ParseUint(val_Uint8Val, 10, 8)
+		if err != nil {
+			formatVars = append(formatVars, ErrTestconfiguintsUint8valEnvInvalid)
+		} else {
+			config.Uint8Val = uint8(parsed)
+		}
+	}
+	val_Uint16Val, ok := os.LookupEnv(TESTCONFIGUINTS_UINT16VAL_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfiguintsUint16valEnvMissing)
+	} else {
+		parsed, err := strconv.ParseUint(val_Uint16Val, 10, 16)
+		if err != nil {
+			formatVars = append(formatVars, ErrTestconfiguintsUint16valEnvInvalid)
+		} else {
+			config.Uint16Val = uint16(parsed)
+		}
+	}
+	val_Uint32Val, ok := os.LookupEnv(TESTCONFIGUINTS_UINT32VAL_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfiguintsUint32valEnvMissing)
+	} else {
+		parsed, err := strconv.ParseUint(val_Uint32Val, 10, 32)
+		if err != nil {
+			formatVars = append(formatVars, ErrTestconfiguintsUint32valEnvInvalid)
+		} else {
+			config.Uint32Val = uint32(parsed)
+		}
+	}
+	val_Uint64Val, ok := os.LookupEnv(TESTCONFIGUINTS_UINT64VAL_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfiguintsUint64valEnvMissing)
+	} else {
+		parsed, err := strconv.ParseUint(val_Uint64Val, 10, 64)
+		if err != nil {
+			formatVars = append(formatVars, ErrTestconfiguintsUint64valEnvInvalid)
+		} else {
+			config.Uint64Val = uint64(parsed)
+		}
+	}
 
-    if len(missingVars) > 0 || len(formatVars) > 0 {
-        var verr error
-        if len(missingVars) > 0 {
-            verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
-        }
-        if len(formatVars) > 0 {
-            verr = errors.Join(verr, InvalidEnvVarsError{vars: missingVars})
-        }
-        return TestConfigUints{}, verr
-    }
+	if len(missingVars) > 0 || len(formatVars) > 0 {
+		var verr error
+		if len(missingVars) > 0 {
+			verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
+		}
+		if len(formatVars) > 0 {
+			verr = errors.Join(verr, InvalidEnvVarsError{vars: formatVars})
+		}
+		return TestConfigUints{}, verr
+	}
 
-    return config, nil
+	return config, nil
 }
 
 type MissingEnvVarsError struct {

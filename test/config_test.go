@@ -46,7 +46,8 @@ var loadFuncRegistry map[string]any
 func getTestCases() []TestCase {
 	tcs := []TestCase{
 		{
-			StructName: "TestConfig1",
+			TestName:     "TestConfig1",
+			LoadFuncName: "LoadTestConfig1",
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIG1_APPNAME", "SuperApp")
 				t.Setenv("TESTCONFIG1_DEBUG", "true")
@@ -61,7 +62,19 @@ func getTestCases() []TestCase {
 			},
 		},
 		{
-			StructName: "TestConfigCopy",
+			TestName:     "TestConfig1_malformed_retries",
+			LoadFuncName: "LoadTestConfig1",
+			SetEnvs: func(t *testing.T) {
+				t.Setenv("TESTCONFIG1_APPNAME", "SuperApp")
+				t.Setenv("TESTCONFIG1_DEBUG", "true")
+				t.Setenv("TESTCONFIG1_TIMEOUT", "5s")
+				t.Setenv("TESTCONFIG1_RETRIES", "notanumber")
+			},
+			IsError: true,
+		},
+		{
+			TestName:     "TestConfigCopy",
+			LoadFuncName: "LoadTestConfigCopy",
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGCOPY_APPNAME", "SuperApp")
 				t.Setenv("TESTCONFIGCOPY_DEBUG", "true")
@@ -76,7 +89,8 @@ func getTestCases() []TestCase {
 			},
 		},
 		{
-			StructName: "TestConfigInts",
+			TestName:     "TestConfigInts",
+			LoadFuncName: "LoadTestConfigInts",
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGINTS_INT8VAL", "8")
 				t.Setenv("TESTCONFIGINTS_INT16VAL", "1600")
@@ -91,7 +105,8 @@ func getTestCases() []TestCase {
 			},
 		},
 		{
-			StructName: "TestConfigUints",
+			TestName:     "TestConfigUints",
+			LoadFuncName: "LoadTestConfigUints",
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGUINTS_UINT8VAL", "8")
 				t.Setenv("TESTCONFIGUINTS_UINT16VAL", "1600")
@@ -106,7 +121,8 @@ func getTestCases() []TestCase {
 			},
 		},
 		{
-			StructName: "TestConfigFloats",
+			TestName:     "TestConfigFloats",
+			LoadFuncName: "LoadTestConfigFloats",
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGFLOATS_FLOAT32VAL", "1.23")
 				t.Setenv("TESTCONFIGFLOATS_FLOAT64VAL", "3.1415")
@@ -117,7 +133,8 @@ func getTestCases() []TestCase {
 			},
 		},
 		{
-			StructName: "TestConfigNested",
+			TestName:     "TestConfigNested",
+			LoadFuncName: "LoadTestConfigNested",
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGNESTED_APPNAME", "NestedApp")
 				t.Setenv("TESTCONFIGNESTED_NESTED_INNERSTR", "hello")
@@ -131,10 +148,6 @@ func getTestCases() []TestCase {
 				},
 			},
 		},
-	}
-
-	for i := range tcs {
-		tcs[i].LoadFuncName = "Load" + tcs[i].StructName
 	}
 
 	// Build the registry manually (unfortunately Go can't discover this automatically)
@@ -151,26 +164,26 @@ func getTestCases() []TestCase {
 }
 
 type TestCase struct {
-	StructName   string
+	TestName     string
+	LoadFuncName string
 	SetEnvs      func(t *testing.T)
 	Expected     any
-	LoadFuncName string
 	IsError      bool
 }
 
 func TestGenerator(t *testing.T) {
 	testcases := getTestCases()
 	for _, tc := range testcases {
-		t.Run(tc.StructName, func(t *testing.T) {
+		t.Run(tc.TestName, func(t *testing.T) {
 			tc.SetEnvs(t)
 			config, err := callLoadFuncByName(t, tc)
 			if !tc.IsError && err != nil {
 				t.Errorf("unexpected error when parsing config: %s", err)
 			}
-			if tc.IsError && err != nil {
-				t.Errorf("expected errror to occur during parse: %s", err)
+			if tc.IsError && err == nil {
+				t.Errorf("expected error to occur during parse, got nil")
 			}
-			if !reflect.DeepEqual(tc.Expected, config) {
+			if !tc.IsError && !reflect.DeepEqual(tc.Expected, config) {
 				t.Errorf("expected %+v (%v), got %+v (%v)\n", tc.Expected, reflect.TypeOf(tc.Expected), config, reflect.TypeOf(config))
 			}
 		})

@@ -5,86 +5,86 @@
 package t2
 
 import (
-    "errors"
-    "os"
-    "strconv"
-    "strings"
-    "time"
+	"errors"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 const (
-    TESTCONFIGCOPY_APPNAME_ENV = "TESTCONFIGCOPY_APPNAME"
-    TESTCONFIGCOPY_DEBUG_ENV = "TESTCONFIGCOPY_DEBUG"
-    TESTCONFIGCOPY_TIMEOUT_ENV = "TESTCONFIGCOPY_TIMEOUT"
-    TESTCONFIGCOPY_RETRIES_ENV = "TESTCONFIGCOPY_RETRIES"
+	TESTCONFIGCOPY_APPNAME_ENV = "TESTCONFIGCOPY_APPNAME"
+	TESTCONFIGCOPY_DEBUG_ENV   = "TESTCONFIGCOPY_DEBUG"
+	TESTCONFIGCOPY_TIMEOUT_ENV = "TESTCONFIGCOPY_TIMEOUT"
+	TESTCONFIGCOPY_RETRIES_ENV = "TESTCONFIGCOPY_RETRIES"
 )
 
 var (
-    ErrTestconfigcopyAppnameEnvMissing = errors.New(TESTCONFIGCOPY_APPNAME_ENV)
-    ErrTestconfigcopyDebugEnvMissing = errors.New(TESTCONFIGCOPY_DEBUG_ENV)
-    ErrTestconfigcopyDebugEnvInvalid = errors.New(TESTCONFIGCOPY_DEBUG_ENV)
-    ErrTestconfigcopyTimeoutEnvMissing = errors.New(TESTCONFIGCOPY_TIMEOUT_ENV)
-    ErrTestconfigcopyTimeoutEnvInvalid = errors.New(TESTCONFIGCOPY_TIMEOUT_ENV)
-    ErrTestconfigcopyRetriesEnvMissing = errors.New(TESTCONFIGCOPY_RETRIES_ENV)
-    ErrTestconfigcopyRetriesEnvInvalid = errors.New(TESTCONFIGCOPY_RETRIES_ENV)
+	ErrTestconfigcopyAppnameEnvMissing = errors.New(TESTCONFIGCOPY_APPNAME_ENV)
+	ErrTestconfigcopyDebugEnvMissing   = errors.New(TESTCONFIGCOPY_DEBUG_ENV)
+	ErrTestconfigcopyDebugEnvInvalid   = errors.New(TESTCONFIGCOPY_DEBUG_ENV)
+	ErrTestconfigcopyTimeoutEnvMissing = errors.New(TESTCONFIGCOPY_TIMEOUT_ENV)
+	ErrTestconfigcopyTimeoutEnvInvalid = errors.New(TESTCONFIGCOPY_TIMEOUT_ENV)
+	ErrTestconfigcopyRetriesEnvMissing = errors.New(TESTCONFIGCOPY_RETRIES_ENV)
+	ErrTestconfigcopyRetriesEnvInvalid = errors.New(TESTCONFIGCOPY_RETRIES_ENV)
 )
 
 func LoadTestConfigCopy() (TestConfigCopy, error) {
-    var config TestConfigCopy
-    var missingVars []error
-    var formatVars []error
-    val_AppName, ok := os.LookupEnv(TESTCONFIGCOPY_APPNAME_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfigcopyAppnameEnvMissing)
-    } else {
-        config.AppName = val_AppName
-    }
-    val_Debug, ok := os.LookupEnv(TESTCONFIGCOPY_DEBUG_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfigcopyDebugEnvMissing)
-    } else {
-        parsed, err := strconv.ParseBool(val_Debug)
-        if err != nil {
-            formatVars = append(formatVars, ErrTestconfigcopyDebugEnvInvalid)
-        } else {
-            config.Debug = parsed
-        }
-    }
-    val_Timeout, ok := os.LookupEnv(TESTCONFIGCOPY_TIMEOUT_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfigcopyTimeoutEnvMissing)
-    } else {
-        parsed, err := time.ParseDuration(val_Timeout)
-        if err != nil {
-            formatVars = append(formatVars, ErrTestconfigcopyTimeoutEnvInvalid)
-        } else {
-            config.Timeout = parsed
-        }
-    }
-    val_Retries, ok := os.LookupEnv(TESTCONFIGCOPY_RETRIES_ENV)
-    if !ok {
-        missingVars = append(missingVars, ErrTestconfigcopyRetriesEnvMissing)
-    } else {
-        parsed, err := strconv.Atoi(val_Retries)
-        if err != nil {
-            formatVars = append(formatVars, ErrTestconfigcopyRetriesEnvInvalid)
-        } else {
-            config.Retries = parsed
-        }
-    }
+	var config TestConfigCopy
+	var missingVars []error
+	var formatVars []error
+	val_AppName, ok := os.LookupEnv(TESTCONFIGCOPY_APPNAME_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfigcopyAppnameEnvMissing)
+	} else {
+		config.AppName = val_AppName
+	}
+	val_Debug, ok := os.LookupEnv(TESTCONFIGCOPY_DEBUG_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfigcopyDebugEnvMissing)
+	} else {
+		parsed, err := strconv.ParseBool(val_Debug)
+		if err != nil {
+			formatVars = append(formatVars, ErrTestconfigcopyDebugEnvInvalid)
+		} else {
+			config.Debug = parsed
+		}
+	}
+	val_Timeout, ok := os.LookupEnv(TESTCONFIGCOPY_TIMEOUT_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfigcopyTimeoutEnvMissing)
+	} else {
+		parsed, err := time.ParseDuration(val_Timeout)
+		if err != nil {
+			formatVars = append(formatVars, ErrTestconfigcopyTimeoutEnvInvalid)
+		} else {
+			config.Timeout = parsed
+		}
+	}
+	val_Retries, ok := os.LookupEnv(TESTCONFIGCOPY_RETRIES_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfigcopyRetriesEnvMissing)
+	} else {
+		parsed, err := strconv.Atoi(val_Retries)
+		if err != nil {
+			formatVars = append(formatVars, ErrTestconfigcopyRetriesEnvInvalid)
+		} else {
+			config.Retries = parsed
+		}
+	}
 
-    if len(missingVars) > 0 || len(formatVars) > 0 {
-        var verr error
-        if len(missingVars) > 0 {
-            verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
-        }
-        if len(formatVars) > 0 {
-            verr = errors.Join(verr, InvalidEnvVarsError{vars: missingVars})
-        }
-        return TestConfigCopy{}, verr
-    }
+	if len(missingVars) > 0 || len(formatVars) > 0 {
+		var verr error
+		if len(missingVars) > 0 {
+			verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
+		}
+		if len(formatVars) > 0 {
+			verr = errors.Join(verr, InvalidEnvVarsError{vars: formatVars})
+		}
+		return TestConfigCopy{}, verr
+	}
 
-    return config, nil
+	return config, nil
 }
 
 type MissingEnvVarsError struct {
