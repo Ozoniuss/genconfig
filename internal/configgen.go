@@ -10,6 +10,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"text/template"
@@ -22,11 +23,13 @@ type TemplateData struct {
 	AssignmentName string
 	EnvVar         string
 	ParseFunc      string
-	// first is always missing error, second is invalid, if exists
-	ErrorVars []string
-	FormatErr bool
-	BitSize   int    // used to determine how to call parseFunc
-	CastFunc  string // parseInt and parseUint return 64bit numbers, need to cast
+	HasDefault     bool
+	DefaultRaw     string // raw string from default:"..." tag; used as fallback value
+	MissingErrVar  string // empty iff HasDefault
+	InvalidErrVar  string // empty iff !FormatErr
+	FormatErr      bool
+	BitSize        int    // used to determine how to call parseFunc
+	CastFunc       string // parseInt and parseUint return 64bit numbers, need to cast
 }
 
 func printformat(debug bool, format string, a ...any) {
@@ -153,7 +156,7 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputGene
 		}
 		defer outEnv.Close()
 		for _, field := range fields {
-			fmt.Fprintf(outEnv, "%s=\n", field.EnvVar)
+			fmt.Fprintf(outEnv, "%s='%s'\n", field.EnvVar, field.DefaultRaw)
 		}
 	}
 	return nil
@@ -181,8 +184,22 @@ func insertTemplateDataEntryForStruct(structDefinition *ast.StructType, structNa
 			typ := convertTypeIdentifierToString(f.Type)
 			printline(debug, "identifier type", typ, "field name", n.Name)
 
-			// we have encoutnered a struct defined in the same file
+			// parse default:"..." struct tag
+			var hasDefault bool
+			var defaultRaw string
+			if f.Tag != nil {
+				tag := reflect.StructTag(strings.Trim(f.Tag.Value, "`"))
+				if raw, ok := tag.Lookup("default"); ok {
+					hasDefault = true
+					defaultRaw = raw
+				}
+			}
+
+			// we have encountered a struct defined in the same file
 			if childDefinition, ok := allTopLevelStructDefinitions[typ]; ok {
+				if hasDefault {
+					panic("default tag on struct-typed field " + n.Name + " is not supported")
+				}
 				*parentNames = append(*parentNames, n.Name)
 				insertTemplateDataEntryForStruct(childDefinition, typ, parentNames, projectPrefix, outputImports, templateData, allTopLevelStructDefinitions, debug)
 				*parentNames = (*parentNames)[:len(*parentNames)-1]
@@ -195,9 +212,14 @@ func insertTemplateDataEntryForStruct(structDefinition *ast.StructType, structNa
 				if !ok {
 					panic("unsupported type in config: " + typ)
 				}
-				errorsVars := []string{getErrKey(canonicalNameList) + "Missing"}
+				errKey := getErrKey(canonicalNameList)
+				missingErrVar := ""
+				if !hasDefault {
+					missingErrVar = errKey + "Missing"
+				}
+				invalidErrVar := ""
 				if canHaveFormatErr {
-					errorsVars = append(errorsVars, getErrKey(canonicalNameList)+"Invalid")
+					invalidErrVar = errKey + "Invalid"
 				}
 
 				if p := pkgForParseFunc(parseFunc); p != "" {
@@ -209,7 +231,10 @@ func insertTemplateDataEntryForStruct(structDefinition *ast.StructType, structNa
 					AssignmentName: assignmentName,
 					EnvVar:         envKey,
 					ParseFunc:      parseFunc,
-					ErrorVars:      errorsVars,
+					HasDefault:     hasDefault,
+					DefaultRaw:     defaultRaw,
+					MissingErrVar:  missingErrVar,
+					InvalidErrVar:  invalidErrVar,
 					FormatErr:      canHaveFormatErr,
 					BitSize:        bitSize,
 					CastFunc:       castFunc,
@@ -392,9 +417,12 @@ const (
 )
 
 var (
-{{- range $f := .Fields }}
-{{- range $f.ErrorVars }}
-	{{ . }} = errors.New({{ $f.EnvVar }}_ENV)
+{{- range .Fields }}
+{{- if .MissingErrVar }}
+	{{ .MissingErrVar }} = errors.New({{ .EnvVar }}_ENV)
+{{- end }}
+{{- if .InvalidErrVar }}
+	{{ .InvalidErrVar }} = errors.New({{ .EnvVar }}_ENV)
 {{- end }}
 {{- end }}
 )
@@ -407,35 +435,42 @@ func Load{{ .StructName }}() ({{ .StructName }}, error) {
 {{- range .Fields }}
 	{{ .AssignmentName }}, ok := os.LookupEnv({{ .EnvVar }}_ENV)
 	if !ok {
-		missingVars = append(missingVars, {{ index .ErrorVars 0 }})
+{{- if .HasDefault }}
+		{{ .AssignmentName }} = {{ printf "%q" .DefaultRaw }}
+		ok = true
+	}
+	if ok {
+{{- else }}
+		missingVars = append(missingVars, {{ .MissingErrVar }})
 	} else {
+{{- end }}
 		{{- if eq .ParseFunc "raw" }}
 		config.{{ .Name }} = {{ .AssignmentName }}
 		{{- else if eq .ParseFunc "strconv.Atoi" }}
 		parsed, err := strconv.Atoi({{ .AssignmentName }})
 		if err != nil {
-			formatVars = append(formatVars, {{ index .ErrorVars 1 }})
+			formatVars = append(formatVars, {{ .InvalidErrVar }})
 		} else {
 			config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
 		}
 		{{- else if or (eq .ParseFunc "strconv.ParseInt") (eq .ParseFunc "strconv.ParseUint") }}
 		parsed, err := {{ .ParseFunc }}({{ .AssignmentName }}, 10, {{ .BitSize }})
 		if err != nil {
-			formatVars = append(formatVars, {{ index .ErrorVars 1 }})
+			formatVars = append(formatVars, {{ .InvalidErrVar }})
 		} else {
 			config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
 		}
 		{{- else if eq .ParseFunc "strconv.ParseFloat" }}
 		parsed, err := strconv.ParseFloat({{ .AssignmentName }}, {{ .BitSize }})
 		if err != nil {
-			formatVars = append(formatVars, {{ index .ErrorVars 1 }})
+			formatVars = append(formatVars, {{ .InvalidErrVar }})
 		} else {
 			config.{{ .Name }} = {{ if .CastFunc }}{{ .CastFunc }}(parsed){{ else }}parsed{{ end }}
 		}
 		{{- else }}
 		parsed, err := {{ .ParseFunc }}({{ .AssignmentName }})
 		if err != nil {
-			formatVars = append(formatVars, {{ index .ErrorVars 1 }})
+			formatVars = append(formatVars, {{ .InvalidErrVar }})
 		} else {
 			config.{{ .Name }} = parsed
 		}

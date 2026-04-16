@@ -250,7 +250,7 @@ genconfig -struct=Config -path=config.go -project=Myapp
 - There must be only one exported config struct definition for the whole project.
 - The generated config loader will be created in the same package as the config struct definition. This is to allow one import to reference both the `LoadConfig()` function and the config struct definition, as well as to make it easier for the `LoadConfig()` function to return that struct.
 - For each struct field, an associated environment variable name will automatically be created and follows [this rule](https://github.com/Ozoniuss/genconfig/blob/283a5252de20a4fa9693499412b861b348ea1a75/internal/configgen.go#L196). The name is not configurable.
-- Every environment variable must be set explicity (no empty values are allowed), thus there are no defaults. Also, they must be parseable into their corresponding type in the config struct. In order to facilitate explicitly setting them, `genconfig` can be configured to output a .env file where they're all set to the empty value.
+- Every environment variable must be parseable into its corresponding type in the config struct. Fields without a `default` tag must be explicitly set; see [Defaults](#defaults) below. In order to facilitate explicitly setting them, `genconfig` can be configured to output a .env file.
 
 > Note: I'm open to changing those assumptions in the future.
 
@@ -264,3 +264,17 @@ Based on the field's type, a different parsing function will be used to convert 
 - `time.ParseDuration` for `time.Duration`
 
 Support for parsing more types (including custom parsing functions) may be added in the future.
+
+## Defaults
+
+Any supported leaf field can opt into a fallback value by adding a `default:"..."` struct tag. When the environment variable is unset, the generated loader substitutes the raw tag string and runs it through the same parse function as a real env var value. When the variable is set, it takes priority.
+
+```go
+type Config struct {
+    Port    int           `default:"8080"`
+    Timeout time.Duration `default:"30s"`
+    Name    string        // no default — still required
+}
+```
+
+An unparseable default (e.g. `default:"abc"` on an `int` field) will surface as an `InvalidEnvVarsError` at runtime, identical to a malformed env var value.

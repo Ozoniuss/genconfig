@@ -15,6 +15,7 @@ import (
 	"github.com/Ozoniuss/genconfig/test/t4"
 	"github.com/Ozoniuss/genconfig/test/t5"
 	"github.com/Ozoniuss/genconfig/test/t6"
+	"github.com/Ozoniuss/genconfig/test/t7"
 )
 
 type TestConfig1 = t1.TestConfig1
@@ -23,6 +24,7 @@ type TestConfigInts = t3.TestConfigInts
 type TestConfigUints = t4.TestConfigUints
 type TestConfigFloats = t5.TestConfigFloats
 type TestConfigNested = t6.TestConfigNested
+type TestConfigDefaults = t7.TestConfigDefaults
 
 func callLoadFuncByName(t *testing.T, tc TestCase) (interface{}, error) {
 	t.Helper()
@@ -148,16 +150,97 @@ func getTestCases() []TestCase {
 				},
 			},
 		},
+		{
+			TestName:     "t7_all_defaults",
+			LoadFuncName: "LoadTestConfigDefaults",
+			SetEnvs: func(t *testing.T) {
+				t.Setenv("TESTCONFIGDEFAULTS_REQUIRED", "mustbeset")
+			},
+			Expected: TestConfigDefaults{
+				Required: "mustbeset",
+				Str:      "hello",
+				B:        true,
+				I:        -5,
+				I8:       -1,
+				I16:      16,
+				I32:      32,
+				I64:      64,
+				U:        5,
+				U8:       1,
+				U16:      16,
+				U32:      32,
+				U64:      64,
+				F32:      1.5,
+				F64:      2.5,
+				D:        1500 * time.Millisecond,
+			},
+		},
+		{
+			TestName:     "t7_overrides",
+			LoadFuncName: "LoadTestConfigDefaults",
+			SetEnvs: func(t *testing.T) {
+				t.Setenv("TESTCONFIGDEFAULTS_REQUIRED", "overridden")
+				t.Setenv("TESTCONFIGDEFAULTS_STR", "world")
+				t.Setenv("TESTCONFIGDEFAULTS_B", "false")
+				t.Setenv("TESTCONFIGDEFAULTS_I", "99")
+				t.Setenv("TESTCONFIGDEFAULTS_I8", "7")
+				t.Setenv("TESTCONFIGDEFAULTS_I16", "100")
+				t.Setenv("TESTCONFIGDEFAULTS_I32", "200")
+				t.Setenv("TESTCONFIGDEFAULTS_I64", "300")
+				t.Setenv("TESTCONFIGDEFAULTS_U", "10")
+				t.Setenv("TESTCONFIGDEFAULTS_U8", "2")
+				t.Setenv("TESTCONFIGDEFAULTS_U16", "20")
+				t.Setenv("TESTCONFIGDEFAULTS_U32", "200")
+				t.Setenv("TESTCONFIGDEFAULTS_U64", "2000")
+				t.Setenv("TESTCONFIGDEFAULTS_F32", "9.9")
+				t.Setenv("TESTCONFIGDEFAULTS_F64", "8.8")
+				t.Setenv("TESTCONFIGDEFAULTS_D", "3s")
+			},
+			Expected: TestConfigDefaults{
+				Required: "overridden",
+				Str:      "world",
+				B:        false,
+				I:        99,
+				I8:       7,
+				I16:      100,
+				I32:      200,
+				I64:      300,
+				U:        10,
+				U8:       2,
+				U16:      20,
+				U32:      200,
+				U64:      2000,
+				F32:      9.9,
+				F64:      8.8,
+				D:        3 * time.Second,
+			},
+		},
+		{
+			TestName:     "t7_required_missing",
+			LoadFuncName: "LoadTestConfigDefaults",
+			SetEnvs:      func(t *testing.T) {},
+			IsError:      true,
+		},
+		{
+			TestName:     "t7_malformed_env_on_default_field",
+			LoadFuncName: "LoadTestConfigDefaults",
+			SetEnvs: func(t *testing.T) {
+				t.Setenv("TESTCONFIGDEFAULTS_REQUIRED", "x")
+				t.Setenv("TESTCONFIGDEFAULTS_I", "abc")
+			},
+			IsError: true,
+		},
 	}
 
 	// Build the registry manually (unfortunately Go can't discover this automatically)
 	loadFuncRegistry = map[string]any{
-		"LoadTestConfig1":      t1.LoadTestConfig1,
-		"LoadTestConfigCopy":   t2.LoadTestConfigCopy,
-		"LoadTestConfigInts":   t3.LoadTestConfigInts,
-		"LoadTestConfigUints":  t4.LoadTestConfigUints,
-		"LoadTestConfigFloats": t5.LoadTestConfigFloats,
-		"LoadTestConfigNested": t6.LoadTestConfigNested,
+		"LoadTestConfig1":        t1.LoadTestConfig1,
+		"LoadTestConfigCopy":     t2.LoadTestConfigCopy,
+		"LoadTestConfigInts":     t3.LoadTestConfigInts,
+		"LoadTestConfigUints":    t4.LoadTestConfigUints,
+		"LoadTestConfigFloats":   t5.LoadTestConfigFloats,
+		"LoadTestConfigNested":   t6.LoadTestConfigNested,
+		"LoadTestConfigDefaults": t7.LoadTestConfigDefaults,
 	}
 
 	return tcs

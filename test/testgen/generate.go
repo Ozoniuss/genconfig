@@ -32,4 +32,8 @@ func main() {
 	if err != nil {
 		fmt.Println("TESTCONFIGNESTED", err)
 	}
+	err = genconfig.GenerateConfigLoader("TESTCONFIGDEFAULTS", "TestConfigDefaults", "t7/config.go", "t7/config_gen.go", "", "testcases", false)
+	if err != nil {
+		fmt.Println("TESTCONFIGDEFAULTS", err)
+	}
 }
