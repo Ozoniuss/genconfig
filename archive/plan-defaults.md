@@ -66,20 +66,20 @@ if !ok {
 {{- if .HasDefault }}
     {{ .AssignmentName }} = {{ printf "%q" .DefaultRaw }}
     ok = true
+} if ok {
 {{- else }}
     missingVars = append(missingVars, {{ .MissingErrVar }})
+} else {
 {{- end }}
-}
-if ok {
     <existing parse-switch block, using .InvalidErrVar in place of (index .ErrorVars 1)>
 }
 ```
 
-This restructuring turns the old `if !ok { ... } else { ... parse ... }` into `if !ok { substitute-or-error }; if ok { parse }`. Generated output for fields WITHOUT defaults should be logically identical to today. A cosmetic diff on regenerated `t1`–`t6` is acceptable; a behavioral diff is not.
+This restructuring turns the old `if !ok { ... } else { ... parse ... }` into `if !ok { substitute-or-error } else/if ok { parse }`. The conditional controls whether the connector is `} else {` (required fields, identical output to before) or `} if ok {` (defaulted fields). Generated output for fields WITHOUT defaults is identical to today.
 
-**Dotenv output (line 148):** write the default as the value when present, else empty:
+**Dotenv output (line 148):** write the default as the single-quoted value when present, else empty:
 ```go
-fmt.Fprintf(outEnv, "%s=%s\n", field.EnvVar, field.DefaultRaw)
+fmt.Fprintf(outEnv, "%s='%s'\n", field.EnvVar, field.DefaultRaw)
 ```
 
 ### 2. `test/t7/config.go` (new)
@@ -154,7 +154,7 @@ One sentence noting that defaults are parsed at runtime through the same functio
 
 - **Tag on a struct-typed field:** explicitly reject with an error from the walker. Silent ignore would confuse users.
 - **Empty string default on a non-string type:** will fail `strconv.ParseBool("")` etc. at runtime and surface as `InvalidEnvVarsError` — acceptable per the chosen design.
-- **Dotenv quoting:** if a default contains `=` or whitespace the naive `KEY=value` emission may not round-trip through every dotenv parser. Acceptable for now; add a TODO in the code.
+- **Dotenv quoting:** single-quote values (`KEY='value'`) to avoid `$`-expansion issues in shells.
 - **Template whitespace:** keep aggressive `{{- -}}` trimming; run `gofmt` on the regenerated files.
 - **`reflect` import:** added to `internal/configgen.go` imports only, not to generated code.
 
@@ -165,3 +165,32 @@ One sentence noting that defaults are parsed at runtime through the same functio
 3. Add the `t7` fixture, `testgen` entry, and test cases. Regenerate and run tests.
 4. Update `README.md`.
 5. Dotenv change (smallest, last; verify with a one-off invocation that outputs a dotenv file).
+
+---
+
+## Session transcript (2026-04-16)
+
+Length: ~30mins
+Model: Default (Sonnet 4.6)
+Implementation commit: 2c6dd11aff022ef074b4624777a6af2601c6d0f0
+
+> can you see the justfile skill?
+
+> Implement this plan iteratively. Use test-driven development.
+
+*(Rejected proposed `KEY=value` dotenv format)*
+> let's always use quotes for now to ensure all parsers work.
+
+*(Rejected proposed `%q` Go-quoted format)*
+> make sure it uses single quotes to avoid issues if using "$"
+
+> Well done, but I do not understand why you changed if !ok -> else in the template to if !ok -> if ok in the new implementation. it is not related to the defaults and it forces me to update the existing template examples. Explain why you added it and if it is not valuable for the defaults, revert that if logic change.
+
+> Use the justfile to understand final steps when making code changes. This is also explained in justfile skill which you should load whenever there is a justfile.
+
+> Commit these changes and push directly to main. I will manage tags later after some manual testing.
+
+
+> Awesome. Move the plan to a new folder called archive now that we implemented it. At the bottom of the plan, write each prompts I wrote during this session. I want to showcase my claude code usage. Include session length and cost at the very bottom.
+
+> You missed some user interactions. For example, when I said to use quotes when you made the env var change.
