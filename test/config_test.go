@@ -3,7 +3,6 @@
 package test
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -16,44 +15,46 @@ import (
 	"github.com/Ozoniuss/genconfig/test/t7"
 )
 
-type TestCase struct {
+type testCase interface {
+	name() string
+	run(t *testing.T)
+}
+
+type Case[T comparable] struct {
 	TestName string
-	Load     func() (any, error)
+	Load     func() (T, error)
 	SetEnvs  func(t *testing.T)
-	Expected any
+	Expected T
 	IsError  bool
 }
 
-func TestGenerator(t *testing.T) {
-	testcases := getTestCases()
-	for _, tc := range testcases {
-		t.Run(tc.TestName, func(t *testing.T) {
-			tc.SetEnvs(t)
-			config, err := tc.Load()
-			if !tc.IsError && err != nil {
-				t.Errorf("unexpected error when parsing config: %s", err)
-			}
-			if tc.IsError && err == nil {
-				t.Errorf("expected error to occur during parse, got nil")
-			}
-			if !tc.IsError && !reflect.DeepEqual(tc.Expected, config) {
-				t.Errorf("expected %+v (%v), got %+v (%v)\n", tc.Expected, reflect.TypeOf(tc.Expected), config, reflect.TypeOf(config))
-			}
-		})
+func (c Case[T]) name() string { return c.TestName }
+
+func (c Case[T]) run(t *testing.T) {
+	c.SetEnvs(t)
+	config, err := c.Load()
+	if !c.IsError && err != nil {
+		t.Errorf("unexpected error when parsing config: %s", err)
+	}
+	if c.IsError && err == nil {
+		t.Errorf("expected error to occur during parse, got nil")
+	}
+	if !c.IsError && config != c.Expected {
+		t.Errorf("expected %+v, got %+v (%T)", c.Expected, config, config)
 	}
 }
 
-// wrap the exported loader function type to something that can be used in
-// every test, regardless of the config type defined.
-func load[T any](f func() (T, error)) func() (any, error) {
-	return func() (any, error) { return f() }
+func TestGenerator(t *testing.T) {
+	for _, tc := range getTestCases() {
+		t.Run(tc.name(), tc.run)
+	}
 }
 
-func getTestCases() []TestCase {
-	return []TestCase{
-		{
+func getTestCases() []testCase {
+	return []testCase{
+		Case[t1.TestConfig1]{
 			TestName: "TestConfig1",
-			Load:     load(t1.LoadTestConfig1),
+			Load:     t1.LoadTestConfig1,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIG1_APPNAME", "SuperApp")
 				t.Setenv("TESTCONFIG1_DEBUG", "true")
@@ -67,9 +68,9 @@ func getTestCases() []TestCase {
 				Retries: 3,
 			},
 		},
-		{
+		Case[t1.TestConfig1]{
 			TestName: "TestConfig1_malformed_retries",
-			Load:     load(t1.LoadTestConfig1),
+			Load:     t1.LoadTestConfig1,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIG1_APPNAME", "SuperApp")
 				t.Setenv("TESTCONFIG1_DEBUG", "true")
@@ -78,9 +79,9 @@ func getTestCases() []TestCase {
 			},
 			IsError: true,
 		},
-		{
+		Case[t2.TestConfigCopy]{
 			TestName: "TestConfigCopy",
-			Load:     load(t2.LoadTestConfigCopy),
+			Load:     t2.LoadTestConfigCopy,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGCOPY_APPNAME", "SuperApp")
 				t.Setenv("TESTCONFIGCOPY_DEBUG", "true")
@@ -94,9 +95,9 @@ func getTestCases() []TestCase {
 				Retries: 3,
 			},
 		},
-		{
+		Case[t3.TestConfigInts]{
 			TestName: "TestConfigInts",
-			Load:     load(t3.LoadTestConfigInts),
+			Load:     t3.LoadTestConfigInts,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGINTS_INT8VAL", "8")
 				t.Setenv("TESTCONFIGINTS_INT16VAL", "1600")
@@ -110,9 +111,9 @@ func getTestCases() []TestCase {
 				Int64Val: 6400000000,
 			},
 		},
-		{
+		Case[t4.TestConfigUints]{
 			TestName: "TestConfigUints",
-			Load:     load(t4.LoadTestConfigUints),
+			Load:     t4.LoadTestConfigUints,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGUINTS_UINT8VAL", "8")
 				t.Setenv("TESTCONFIGUINTS_UINT16VAL", "1600")
@@ -126,9 +127,9 @@ func getTestCases() []TestCase {
 				Uint64Val: 6400000000,
 			},
 		},
-		{
+		Case[t5.TestConfigFloats]{
 			TestName: "TestConfigFloats",
-			Load:     load(t5.LoadTestConfigFloats),
+			Load:     t5.LoadTestConfigFloats,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGFLOATS_FLOAT32VAL", "1.23")
 				t.Setenv("TESTCONFIGFLOATS_FLOAT64VAL", "3.1415")
@@ -138,9 +139,9 @@ func getTestCases() []TestCase {
 				Float64Val: 3.1415,
 			},
 		},
-		{
+		Case[t6.TestConfigNested]{
 			TestName: "TestConfigNested",
-			Load:     load(t6.LoadTestConfigNested),
+			Load:     t6.LoadTestConfigNested,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGNESTED_APPNAME", "NestedApp")
 				t.Setenv("TESTCONFIGNESTED_NESTED_INNERSTR", "hello")
@@ -154,9 +155,9 @@ func getTestCases() []TestCase {
 				},
 			},
 		},
-		{
+		Case[t7.TestConfigDefaults]{
 			TestName: "t7_all_defaults",
-			Load:     load(t7.LoadTestConfigDefaults),
+			Load:     t7.LoadTestConfigDefaults,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGDEFAULTS_REQUIRED", "mustbeset")
 			},
@@ -179,9 +180,9 @@ func getTestCases() []TestCase {
 				D:        1500 * time.Millisecond,
 			},
 		},
-		{
+		Case[t7.TestConfigDefaults]{
 			TestName: "t7_overrides",
-			Load:     load(t7.LoadTestConfigDefaults),
+			Load:     t7.LoadTestConfigDefaults,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGDEFAULTS_REQUIRED", "overridden")
 				t.Setenv("TESTCONFIGDEFAULTS_STR", "world")
@@ -219,15 +220,15 @@ func getTestCases() []TestCase {
 				D:        3 * time.Second,
 			},
 		},
-		{
+		Case[t7.TestConfigDefaults]{
 			TestName: "t7_required_missing",
-			Load:     load(t7.LoadTestConfigDefaults),
+			Load:     t7.LoadTestConfigDefaults,
 			SetEnvs:  func(t *testing.T) {},
 			IsError:  true,
 		},
-		{
+		Case[t7.TestConfigDefaults]{
 			TestName: "t7_malformed_env_on_default_field",
-			Load:     load(t7.LoadTestConfigDefaults),
+			Load:     t7.LoadTestConfigDefaults,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGDEFAULTS_REQUIRED", "x")
 				t.Setenv("TESTCONFIGDEFAULTS_I", "abc")
