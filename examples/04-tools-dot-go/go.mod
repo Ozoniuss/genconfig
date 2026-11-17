@@ -1,6 +1,6 @@
 module example
 
-go 1.24.0
+go 1.27
 
 replace github.com/Ozoniuss/genconfig => ../..
 

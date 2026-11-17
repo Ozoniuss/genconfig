@@ -23,6 +23,7 @@ go.work.sum
 
 # env file
 .env
+!examples/**/.env
 
 # generated test files
 test/c[0-9]*.go
