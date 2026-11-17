@@ -2,9 +2,10 @@
 
 package t3
 
-type TestConfigInts struct {
-	Int8Val  int8
-	Int16Val int16
-	Int32Val int32
-	Int64Val int64
+// TestConfigUints: unsigned ints
+type TestConfigUints struct {
+	Uint8Val  uint8
+	Uint16Val uint16
+	Uint32Val uint32
+	Uint64Val uint64
 }

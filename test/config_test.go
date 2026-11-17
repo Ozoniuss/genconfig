@@ -12,7 +12,6 @@ import (
 	"github.com/Ozoniuss/genconfig/test/t4"
 	"github.com/Ozoniuss/genconfig/test/t5"
 	"github.com/Ozoniuss/genconfig/test/t6"
-	"github.com/Ozoniuss/genconfig/test/t7"
 )
 
 type testCase interface {
@@ -79,89 +78,73 @@ func getTestCases() []testCase {
 			},
 			IsError: true,
 		},
-		Case[t2.TestConfigCopy]{
-			TestName: "TestConfigCopy",
-			Load:     t2.LoadTestConfigCopy,
-			SetEnvs: func(t *testing.T) {
-				t.Setenv("TESTCONFIGCOPY_APPNAME", "SuperApp")
-				t.Setenv("TESTCONFIGCOPY_DEBUG", "true")
-				t.Setenv("TESTCONFIGCOPY_TIMEOUT", "5s")
-				t.Setenv("TESTCONFIGCOPY_RETRIES", "3")
-			},
-			Expected: t2.TestConfigCopy{
-				AppName: "SuperApp",
-				Debug:   true,
-				Timeout: 5 * time.Second,
-				Retries: 3,
-			},
-		},
-		Case[t3.TestConfigInts]{
+		Case[t2.TestConfigInts]{
 			TestName: "TestConfigInts",
-			Load:     t3.LoadTestConfigInts,
+			Load:     t2.LoadTestConfigInts,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGINTS_INT8VAL", "8")
 				t.Setenv("TESTCONFIGINTS_INT16VAL", "1600")
 				t.Setenv("TESTCONFIGINTS_INT32VAL", "320000")
 				t.Setenv("TESTCONFIGINTS_INT64VAL", "6400000000")
 			},
-			Expected: t3.TestConfigInts{
+			Expected: t2.TestConfigInts{
 				Int8Val:  8,
 				Int16Val: 1600,
 				Int32Val: 320000,
 				Int64Val: 6400000000,
 			},
 		},
-		Case[t4.TestConfigUints]{
+		Case[t3.TestConfigUints]{
 			TestName: "TestConfigUints",
-			Load:     t4.LoadTestConfigUints,
+			Load:     t3.LoadTestConfigUints,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGUINTS_UINT8VAL", "8")
 				t.Setenv("TESTCONFIGUINTS_UINT16VAL", "1600")
 				t.Setenv("TESTCONFIGUINTS_UINT32VAL", "320000")
 				t.Setenv("TESTCONFIGUINTS_UINT64VAL", "6400000000")
 			},
-			Expected: t4.TestConfigUints{
+			Expected: t3.TestConfigUints{
 				Uint8Val:  8,
 				Uint16Val: 1600,
 				Uint32Val: 320000,
 				Uint64Val: 6400000000,
 			},
 		},
-		Case[t5.TestConfigFloats]{
+		Case[t4.TestConfigFloats]{
 			TestName: "TestConfigFloats",
-			Load:     t5.LoadTestConfigFloats,
+			Load:     t4.LoadTestConfigFloats,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGFLOATS_FLOAT32VAL", "1.23")
 				t.Setenv("TESTCONFIGFLOATS_FLOAT64VAL", "3.1415")
 			},
-			Expected: t5.TestConfigFloats{
+			Expected: t4.TestConfigFloats{
 				Float32Val: 1.23,
 				Float64Val: 3.1415,
 			},
 		},
-		Case[t6.TestConfigNested]{
+		Case[t5.TestConfigNested]{
 			TestName: "TestConfigNested",
-			Load:     t6.LoadTestConfigNested,
+			Load:     t5.LoadTestConfigNested,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGNESTED_APPNAME", "NestedApp")
 				t.Setenv("TESTCONFIGNESTED_NESTED_INNERSTR", "hello")
 				t.Setenv("TESTCONFIGNESTED_NESTED_INNERBOOL", "true")
 			},
-			Expected: t6.TestConfigNested{
+			Expected: t5.TestConfigNested{
 				AppName: "NestedApp",
-				Nested: t6.Nested{
+				Nested: t5.Nested{
 					InnerStr:  "hello",
 					InnerBool: true,
 				},
 			},
 		},
-		Case[t7.TestConfigDefaults]{
-			TestName: "t7_all_defaults",
-			Load:     t7.LoadTestConfigDefaults,
+		Case[t6.TestConfigDefaults]{
+			TestName: "t6_all_defaults",
+			Load:     t6.LoadTestConfigDefaults,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGDEFAULTS_REQUIRED", "mustbeset")
 			},
-			Expected: t7.TestConfigDefaults{
+			Expected: t6.TestConfigDefaults{
 				Required: "mustbeset",
 				Str:      "hello",
 				B:        true,
@@ -180,9 +163,9 @@ func getTestCases() []testCase {
 				D:        1500 * time.Millisecond,
 			},
 		},
-		Case[t7.TestConfigDefaults]{
-			TestName: "t7_overrides",
-			Load:     t7.LoadTestConfigDefaults,
+		Case[t6.TestConfigDefaults]{
+			TestName: "t6_overrides",
+			Load:     t6.LoadTestConfigDefaults,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGDEFAULTS_REQUIRED", "overridden")
 				t.Setenv("TESTCONFIGDEFAULTS_STR", "world")
@@ -201,7 +184,7 @@ func getTestCases() []testCase {
 				t.Setenv("TESTCONFIGDEFAULTS_F64", "8.8")
 				t.Setenv("TESTCONFIGDEFAULTS_D", "3s")
 			},
-			Expected: t7.TestConfigDefaults{
+			Expected: t6.TestConfigDefaults{
 				Required: "overridden",
 				Str:      "world",
 				B:        false,
@@ -220,15 +203,15 @@ func getTestCases() []testCase {
 				D:        3 * time.Second,
 			},
 		},
-		Case[t7.TestConfigDefaults]{
-			TestName: "t7_required_missing",
-			Load:     t7.LoadTestConfigDefaults,
+		Case[t6.TestConfigDefaults]{
+			TestName: "t6_required_missing",
+			Load:     t6.LoadTestConfigDefaults,
 			SetEnvs:  func(t *testing.T) {},
 			IsError:  true,
 		},
-		Case[t7.TestConfigDefaults]{
-			TestName: "t7_malformed_env_on_default_field",
-			Load:     t7.LoadTestConfigDefaults,
+		Case[t6.TestConfigDefaults]{
+			TestName: "t6_malformed_env_on_default_field",
+			Load:     t6.LoadTestConfigDefaults,
 			SetEnvs: func(t *testing.T) {
 				t.Setenv("TESTCONFIGDEFAULTS_REQUIRED", "x")
 				t.Setenv("TESTCONFIGDEFAULTS_I", "abc")

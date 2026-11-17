@@ -11,41 +11,43 @@ import (
 )
 
 const (
-	TESTCONFIGFLOATS_FLOAT32VAL_ENV = "TESTCONFIGFLOATS_FLOAT32VAL"
-	TESTCONFIGFLOATS_FLOAT64VAL_ENV = "TESTCONFIGFLOATS_FLOAT64VAL"
+	TESTCONFIGNESTED_APPNAME_ENV          = "TESTCONFIGNESTED_APPNAME"
+	TESTCONFIGNESTED_NESTED_INNERSTR_ENV  = "TESTCONFIGNESTED_NESTED_INNERSTR"
+	TESTCONFIGNESTED_NESTED_INNERBOOL_ENV = "TESTCONFIGNESTED_NESTED_INNERBOOL"
 )
 
 var (
-	ErrTestconfigfloatsFloat32valEnvMissing = errors.New(TESTCONFIGFLOATS_FLOAT32VAL_ENV)
-	ErrTestconfigfloatsFloat32valEnvInvalid = errors.New(TESTCONFIGFLOATS_FLOAT32VAL_ENV)
-	ErrTestconfigfloatsFloat64valEnvMissing = errors.New(TESTCONFIGFLOATS_FLOAT64VAL_ENV)
-	ErrTestconfigfloatsFloat64valEnvInvalid = errors.New(TESTCONFIGFLOATS_FLOAT64VAL_ENV)
+	ErrTestconfignestedAppnameEnvMissing         = errors.New(TESTCONFIGNESTED_APPNAME_ENV)
+	ErrTestconfignestedNestedInnerstrEnvMissing  = errors.New(TESTCONFIGNESTED_NESTED_INNERSTR_ENV)
+	ErrTestconfignestedNestedInnerboolEnvMissing = errors.New(TESTCONFIGNESTED_NESTED_INNERBOOL_ENV)
+	ErrTestconfignestedNestedInnerboolEnvInvalid = errors.New(TESTCONFIGNESTED_NESTED_INNERBOOL_ENV)
 )
 
-func LoadTestConfigFloats() (TestConfigFloats, error) {
-	var config TestConfigFloats
+func LoadTestConfigNested() (TestConfigNested, error) {
+	var config TestConfigNested
 	var missingVars []error
 	var formatVars []error
-	val_Float32Val, ok := os.LookupEnv(TESTCONFIGFLOATS_FLOAT32VAL_ENV)
+	val_AppName, ok := os.LookupEnv(TESTCONFIGNESTED_APPNAME_ENV)
 	if !ok {
-		missingVars = append(missingVars, ErrTestconfigfloatsFloat32valEnvMissing)
+		missingVars = append(missingVars, ErrTestconfignestedAppnameEnvMissing)
 	} else {
-		parsed, err := strconv.ParseFloat(val_Float32Val, 32)
-		if err != nil {
-			formatVars = append(formatVars, ErrTestconfigfloatsFloat32valEnvInvalid)
-		} else {
-			config.Float32Val = float32(parsed)
-		}
+		config.AppName = val_AppName
 	}
-	val_Float64Val, ok := os.LookupEnv(TESTCONFIGFLOATS_FLOAT64VAL_ENV)
+	val_Nested_InnerStr, ok := os.LookupEnv(TESTCONFIGNESTED_NESTED_INNERSTR_ENV)
 	if !ok {
-		missingVars = append(missingVars, ErrTestconfigfloatsFloat64valEnvMissing)
+		missingVars = append(missingVars, ErrTestconfignestedNestedInnerstrEnvMissing)
 	} else {
-		parsed, err := strconv.ParseFloat(val_Float64Val, 64)
+		config.Nested.InnerStr = val_Nested_InnerStr
+	}
+	val_Nested_InnerBool, ok := os.LookupEnv(TESTCONFIGNESTED_NESTED_INNERBOOL_ENV)
+	if !ok {
+		missingVars = append(missingVars, ErrTestconfignestedNestedInnerboolEnvMissing)
+	} else {
+		parsed, err := strconv.ParseBool(val_Nested_InnerBool)
 		if err != nil {
-			formatVars = append(formatVars, ErrTestconfigfloatsFloat64valEnvInvalid)
+			formatVars = append(formatVars, ErrTestconfignestedNestedInnerboolEnvInvalid)
 		} else {
-			config.Float64Val = parsed
+			config.Nested.InnerBool = parsed
 		}
 	}
 
@@ -57,7 +59,7 @@ func LoadTestConfigFloats() (TestConfigFloats, error) {
 		if len(formatVars) > 0 {
 			verr = errors.Join(verr, InvalidEnvVarsError{vars: formatVars})
 		}
-		return TestConfigFloats{}, verr
+		return TestConfigNested{}, verr
 	}
 
 	return config, nil

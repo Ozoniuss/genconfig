@@ -2,7 +2,12 @@
 
 package t5
 
-type TestConfigFloats struct {
-	Float32Val float32
-	Float64Val float64
+type Nested struct {
+	InnerStr  string
+	InnerBool bool
+}
+
+type TestConfigNested struct {
+	AppName string
+	Nested  Nested
 }

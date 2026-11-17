@@ -11,69 +11,69 @@ import (
 )
 
 const (
-	TESTCONFIGINTS_INT8VAL_ENV  = "TESTCONFIGINTS_INT8VAL"
-	TESTCONFIGINTS_INT16VAL_ENV = "TESTCONFIGINTS_INT16VAL"
-	TESTCONFIGINTS_INT32VAL_ENV = "TESTCONFIGINTS_INT32VAL"
-	TESTCONFIGINTS_INT64VAL_ENV = "TESTCONFIGINTS_INT64VAL"
+	TESTCONFIGUINTS_UINT8VAL_ENV  = "TESTCONFIGUINTS_UINT8VAL"
+	TESTCONFIGUINTS_UINT16VAL_ENV = "TESTCONFIGUINTS_UINT16VAL"
+	TESTCONFIGUINTS_UINT32VAL_ENV = "TESTCONFIGUINTS_UINT32VAL"
+	TESTCONFIGUINTS_UINT64VAL_ENV = "TESTCONFIGUINTS_UINT64VAL"
 )
 
 var (
-	ErrTestconfigintsInt8valEnvMissing  = errors.New(TESTCONFIGINTS_INT8VAL_ENV)
-	ErrTestconfigintsInt8valEnvInvalid  = errors.New(TESTCONFIGINTS_INT8VAL_ENV)
-	ErrTestconfigintsInt16valEnvMissing = errors.New(TESTCONFIGINTS_INT16VAL_ENV)
-	ErrTestconfigintsInt16valEnvInvalid = errors.New(TESTCONFIGINTS_INT16VAL_ENV)
-	ErrTestconfigintsInt32valEnvMissing = errors.New(TESTCONFIGINTS_INT32VAL_ENV)
-	ErrTestconfigintsInt32valEnvInvalid = errors.New(TESTCONFIGINTS_INT32VAL_ENV)
-	ErrTestconfigintsInt64valEnvMissing = errors.New(TESTCONFIGINTS_INT64VAL_ENV)
-	ErrTestconfigintsInt64valEnvInvalid = errors.New(TESTCONFIGINTS_INT64VAL_ENV)
+	ErrTestconfiguintsUint8valEnvMissing  = errors.New(TESTCONFIGUINTS_UINT8VAL_ENV)
+	ErrTestconfiguintsUint8valEnvInvalid  = errors.New(TESTCONFIGUINTS_UINT8VAL_ENV)
+	ErrTestconfiguintsUint16valEnvMissing = errors.New(TESTCONFIGUINTS_UINT16VAL_ENV)
+	ErrTestconfiguintsUint16valEnvInvalid = errors.New(TESTCONFIGUINTS_UINT16VAL_ENV)
+	ErrTestconfiguintsUint32valEnvMissing = errors.New(TESTCONFIGUINTS_UINT32VAL_ENV)
+	ErrTestconfiguintsUint32valEnvInvalid = errors.New(TESTCONFIGUINTS_UINT32VAL_ENV)
+	ErrTestconfiguintsUint64valEnvMissing = errors.New(TESTCONFIGUINTS_UINT64VAL_ENV)
+	ErrTestconfiguintsUint64valEnvInvalid = errors.New(TESTCONFIGUINTS_UINT64VAL_ENV)
 )
 
-func LoadTestConfigInts() (TestConfigInts, error) {
-	var config TestConfigInts
+func LoadTestConfigUints() (TestConfigUints, error) {
+	var config TestConfigUints
 	var missingVars []error
 	var formatVars []error
-	val_Int8Val, ok := os.LookupEnv(TESTCONFIGINTS_INT8VAL_ENV)
+	val_Uint8Val, ok := os.LookupEnv(TESTCONFIGUINTS_UINT8VAL_ENV)
 	if !ok {
-		missingVars = append(missingVars, ErrTestconfigintsInt8valEnvMissing)
+		missingVars = append(missingVars, ErrTestconfiguintsUint8valEnvMissing)
 	} else {
-		parsed, err := strconv.ParseInt(val_Int8Val, 10, 8)
+		parsed, err := strconv.ParseUint(val_Uint8Val, 10, 8)
 		if err != nil {
-			formatVars = append(formatVars, ErrTestconfigintsInt8valEnvInvalid)
+			formatVars = append(formatVars, ErrTestconfiguintsUint8valEnvInvalid)
 		} else {
-			config.Int8Val = int8(parsed)
+			config.Uint8Val = uint8(parsed)
 		}
 	}
-	val_Int16Val, ok := os.LookupEnv(TESTCONFIGINTS_INT16VAL_ENV)
+	val_Uint16Val, ok := os.LookupEnv(TESTCONFIGUINTS_UINT16VAL_ENV)
 	if !ok {
-		missingVars = append(missingVars, ErrTestconfigintsInt16valEnvMissing)
+		missingVars = append(missingVars, ErrTestconfiguintsUint16valEnvMissing)
 	} else {
-		parsed, err := strconv.ParseInt(val_Int16Val, 10, 16)
+		parsed, err := strconv.ParseUint(val_Uint16Val, 10, 16)
 		if err != nil {
-			formatVars = append(formatVars, ErrTestconfigintsInt16valEnvInvalid)
+			formatVars = append(formatVars, ErrTestconfiguintsUint16valEnvInvalid)
 		} else {
-			config.Int16Val = int16(parsed)
+			config.Uint16Val = uint16(parsed)
 		}
 	}
-	val_Int32Val, ok := os.LookupEnv(TESTCONFIGINTS_INT32VAL_ENV)
+	val_Uint32Val, ok := os.LookupEnv(TESTCONFIGUINTS_UINT32VAL_ENV)
 	if !ok {
-		missingVars = append(missingVars, ErrTestconfigintsInt32valEnvMissing)
+		missingVars = append(missingVars, ErrTestconfiguintsUint32valEnvMissing)
 	} else {
-		parsed, err := strconv.ParseInt(val_Int32Val, 10, 32)
+		parsed, err := strconv.ParseUint(val_Uint32Val, 10, 32)
 		if err != nil {
-			formatVars = append(formatVars, ErrTestconfigintsInt32valEnvInvalid)
+			formatVars = append(formatVars, ErrTestconfiguintsUint32valEnvInvalid)
 		} else {
-			config.Int32Val = int32(parsed)
+			config.Uint32Val = uint32(parsed)
 		}
 	}
-	val_Int64Val, ok := os.LookupEnv(TESTCONFIGINTS_INT64VAL_ENV)
+	val_Uint64Val, ok := os.LookupEnv(TESTCONFIGUINTS_UINT64VAL_ENV)
 	if !ok {
-		missingVars = append(missingVars, ErrTestconfigintsInt64valEnvMissing)
+		missingVars = append(missingVars, ErrTestconfiguintsUint64valEnvMissing)
 	} else {
-		parsed, err := strconv.ParseInt(val_Int64Val, 10, 64)
+		parsed, err := strconv.ParseUint(val_Uint64Val, 10, 64)
 		if err != nil {
-			formatVars = append(formatVars, ErrTestconfigintsInt64valEnvInvalid)
+			formatVars = append(formatVars, ErrTestconfiguintsUint64valEnvInvalid)
 		} else {
-			config.Int64Val = int64(parsed)
+			config.Uint64Val = uint64(parsed)
 		}
 	}
 
@@ -85,7 +85,7 @@ func LoadTestConfigInts() (TestConfigInts, error) {
 		if len(formatVars) > 0 {
 			verr = errors.Join(verr, InvalidEnvVarsError{vars: formatVars})
 		}
-		return TestConfigInts{}, verr
+		return TestConfigUints{}, verr
 	}
 
 	return config, nil
