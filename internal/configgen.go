@@ -89,12 +89,6 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputGene
 
 	printformat(debug, "using project name prefix %s\n", projectPrefix)
 
-	generatedFile, err := createOutputFile(outputGeneratedConfigFile)
-	if err != nil {
-		return fmt.Errorf("could not create output config loader file: %w", err)
-	}
-	defer generatedFile.Close()
-
 	outputImports := setupImportsAlwaysNeeded()
 
 	// Parse config.go
@@ -117,7 +111,10 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputGene
 	allTopLevelStructDefinitions := getAllTopLevelStructDefinitions(node)
 	printline(debug, "all struct defintions", allTopLevelStructDefinitions)
 
-	configTypeDefinition := allTopLevelStructDefinitions[configStructName]
+	configTypeDefinition, ok := allTopLevelStructDefinitions[configStructName]
+	if !ok {
+		return fmt.Errorf("struct %s not found in %s", configStructName, inputFile)
+	}
 	parentNames := []string{}
 
 	insertTemplateDataEntryForStruct(configTypeDefinition, configStructName, &parentNames, projectPrefix, outputImports, &fields, allTopLevelStructDefinitions, debug)
@@ -144,6 +141,12 @@ func GenerateConfigLoader(projectPrefix, configStructName, inputFile, outputGene
 	if err != nil {
 		return fmt.Errorf("could not format generated code: %w", err)
 	}
+
+	generatedFile, err := createOutputFile(outputGeneratedConfigFile)
+	if err != nil {
+		return fmt.Errorf("could not create output config loader file: %w", err)
+	}
+	defer generatedFile.Close()
 	generatedFile.Write(formatted)
 
 	printline(debug, fields)

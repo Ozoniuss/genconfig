@@ -61,12 +61,12 @@ func main() {
 	}
 
 	if configFilePath == "" {
-		fmt.Fprintf(os.Stderr, "Cannot find the go file where the struct is located.")
+		fmt.Fprintln(os.Stderr, "Cannot find the go file where the struct is located.")
 		os.Exit(1)
 	}
 
 	if flagConfigStructName == "" {
-		fmt.Fprint(os.Stderr, "Please specify a non-empty config struct.")
+		fmt.Fprintln(os.Stderr, "Please specify a non-empty config struct.")
 		os.Exit(1)
 	}
 
@@ -74,7 +74,7 @@ func main() {
 
 	err := gncfg.GenerateConfigLoader(flagProjectName, flagConfigStructName, configFilePath, outputConfigLoaderPath, flagOutputDotenvFile, "", flagDebugLogs)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "could not generate config: %s", err.Error())
+		fmt.Fprintf(os.Stderr, "could not generate config loader: %s\n", err.Error())
 		os.Exit(1)
 	}
 }
