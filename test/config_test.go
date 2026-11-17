@@ -25,7 +25,7 @@ type TestConfigFloats = t5.TestConfigFloats
 type TestConfigNested = t6.TestConfigNested
 type TestConfigDefaults = t7.TestConfigDefaults
 
-func callLoadFuncByName(t *testing.T, tc TestCase) (interface{}, error) {
+func callLoadFuncByName(t *testing.T, tc TestCase) (any, error) {
 	t.Helper()
 	loadFunc := reflect.ValueOf(loadFuncRegistry[tc.LoadFuncName])
 	if !loadFunc.IsValid() {
