@@ -6,4 +6,4 @@ replace github.com/Ozoniuss/genconfig => ../..
 
 tool github.com/Ozoniuss/genconfig
 
-require github.com/Ozoniuss/genconfig v1.2.0 // indirect
+require github.com/Ozoniuss/genconfig v1.6.0 // indirect
