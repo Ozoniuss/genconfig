@@ -80,7 +80,6 @@ Add the following to your tools.go file:
 
 ```go
 //go:build tools
-// +build tools
 
 package main
 

@@ -1,5 +1,4 @@
 //go:build testcases
-// +build testcases
 
 package t1
 

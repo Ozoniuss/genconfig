@@ -400,7 +400,6 @@ var goTemplate = template.Must(template.New("config").Parse(`// Code generated b
 
 {{- if .TestBuildTag }}
 //go:build {{ .TestBuildTag }}
-// +build {{ .TestBuildTag }}
 
 {{- end }}
 
