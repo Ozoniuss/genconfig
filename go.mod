@@ -1,3 +1,3 @@
 module github.com/Ozoniuss/genconfig
 
-go 1.24
+go 1.27
