@@ -4,7 +4,7 @@ import "time"
 
 type Config struct {
 	Apikey   string
-	Loglevel string
+	Loglevel string `default:"info"`
 	Server   ServerConfig
 }
 

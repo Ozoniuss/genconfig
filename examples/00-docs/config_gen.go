@@ -20,7 +20,6 @@ const (
 
 var (
 	ErrAppApikeyEnvMissing                 = errors.New(APP_APIKEY_ENV)
-	ErrAppLoglevelEnvMissing               = errors.New(APP_LOGLEVEL_ENV)
 	ErrAppServerHostEnvMissing             = errors.New(APP_SERVER_HOST_ENV)
 	ErrAppServerPortEnvMissing             = errors.New(APP_SERVER_PORT_ENV)
 	ErrAppServerPortEnvInvalid             = errors.New(APP_SERVER_PORT_ENV)
@@ -40,8 +39,10 @@ func LoadConfig() (Config, error) {
 	}
 	val_Loglevel, ok := os.LookupEnv(APP_LOGLEVEL_ENV)
 	if !ok {
-		missingVars = append(missingVars, ErrAppLoglevelEnvMissing)
-	} else {
+		val_Loglevel = "info"
+		ok = true
+	}
+	if ok {
 		config.Loglevel = val_Loglevel
 	}
 	val_Server_Host, ok := os.LookupEnv(APP_SERVER_HOST_ENV)
