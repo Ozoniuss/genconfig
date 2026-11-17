@@ -8,8 +8,8 @@ See [Installation and Usage](#installation-and-usage) for more detailed instruct
 
 The struct `Config` below defines your project's settings:
 
+<!-- sync:begin file=examples/00-docs/config.go lang=go skip=4 -->
 ```go
-//go:generate go tool genconfig -struct=Config -project=App
 type Config struct {
 	Apikey   string
 	Loglevel string
@@ -22,137 +22,9 @@ type ServerConfig struct {
 	ShutdownInterval time.Duration
 }
 ```
+<!-- sync:end -->
 
-Based on this, running `genconfig` will generate the following file:
-
-```go
-package main
-
-import (
-	"errors"
-	"os"
-	"strconv"
-	"strings"
-	"time"
-)
-
-const (
-	APP_APIKEY_ENV                  = "APP_APIKEY"
-	APP_LOGLEVEL_ENV                = "APP_LOGLEVEL"
-	APP_SERVER_HOST_ENV             = "APP_SERVER_HOST"
-	APP_SERVER_PORT_ENV             = "APP_SERVER_PORT"
-	APP_SERVER_SHUTDOWNINTERVAL_ENV = "APP_SERVER_SHUTDOWNINTERVAL"
-)
-
-var (
-	ErrAppApikeyEnvMissing                 = errors.New(APP_APIKEY_ENV)
-	ErrAppLoglevelEnvMissing               = errors.New(APP_LOGLEVEL_ENV)
-	ErrAppServerHostEnvMissing             = errors.New(APP_SERVER_HOST_ENV)
-	ErrAppServerPortEnvMissing             = errors.New(APP_SERVER_PORT_ENV)
-	ErrAppServerPortEnvInvalid             = errors.New(APP_SERVER_PORT_ENV)
-	ErrAppServerShutdownintervalEnvMissing = errors.New(APP_SERVER_SHUTDOWNINTERVAL_ENV)
-	ErrAppServerShutdownintervalEnvInvalid = errors.New(APP_SERVER_SHUTDOWNINTERVAL_ENV)
-)
-
-func LoadConfig() (Config, error) {
-	var config Config
-	var missingVars []error
-	var formatVars []error
-	val_Apikey, ok := os.LookupEnv(APP_APIKEY_ENV)
-	if !ok {
-		missingVars = append(missingVars, ErrAppApikeyEnvMissing)
-	} else {
-		config.Apikey = val_Apikey
-	}
-	val_Loglevel, ok := os.LookupEnv(APP_LOGLEVEL_ENV)
-	if !ok {
-		missingVars = append(missingVars, ErrAppLoglevelEnvMissing)
-	} else {
-		config.Loglevel = val_Loglevel
-	}
-	val_Server_Host, ok := os.LookupEnv(APP_SERVER_HOST_ENV)
-	if !ok {
-		missingVars = append(missingVars, ErrAppServerHostEnvMissing)
-	} else {
-		config.Server.Host = val_Server_Host
-	}
-	val_Server_Port, ok := os.LookupEnv(APP_SERVER_PORT_ENV)
-	if !ok {
-		missingVars = append(missingVars, ErrAppServerPortEnvMissing)
-	} else {
-		parsed, err := strconv.Atoi(val_Server_Port)
-		if err != nil {
-			formatVars = append(formatVars, ErrAppServerPortEnvInvalid)
-		} else {
-			config.Server.Port = parsed
-		}
-	}
-	val_Server_ShutdownInterval, ok := os.LookupEnv(APP_SERVER_SHUTDOWNINTERVAL_ENV)
-	if !ok {
-		missingVars = append(missingVars, ErrAppServerShutdownintervalEnvMissing)
-	} else {
-		parsed, err := time.ParseDuration(val_Server_ShutdownInterval)
-		if err != nil {
-			formatVars = append(formatVars, ErrAppServerShutdownintervalEnvInvalid)
-		} else {
-			config.Server.ShutdownInterval = parsed
-		}
-	}
-
-	if len(missingVars) > 0 || len(formatVars) > 0 {
-		var verr error
-		if len(missingVars) > 0 {
-			verr = errors.Join(verr, MissingEnvVarsError{vars: missingVars})
-		}
-		if len(formatVars) > 0 {
-			verr = errors.Join(verr, InvalidEnvVarsError{vars: formatVars})
-		}
-		return Config{}, verr
-	}
-
-	return config, nil
-}
-
-type MissingEnvVarsError struct {
-	vars []error
-}
-
-func (m MissingEnvVarsError) Unwrap() []error {
-	return m.vars
-}
-
-func (m MissingEnvVarsError) Error() string {
-	if len(m.vars) == 0 {
-		return ""
-	}
-	varsstr := make([]string, 0, len(m.vars))
-	for _, v := range m.vars {
-		varsstr = append(varsstr, v.Error())
-	}
-	return "envs " + strings.Join(varsstr, ",") + " are not set"
-}
-
-type InvalidEnvVarsError struct {
-	vars []error
-}
-
-func (m InvalidEnvVarsError) Unwrap() []error {
-	return m.vars
-}
-
-func (m InvalidEnvVarsError) Error() string {
-	if len(m.vars) == 0 {
-		return ""
-	}
-	varsstr := make([]string, 0, len(m.vars))
-	for _, v := range m.vars {
-		varsstr = append(varsstr, v.Error())
-	}
-	return "envs " + strings.Join(varsstr, ",") + " have an invalid value"
-}
-```
-
-You can then use the exported `LoadConfig()` function to populate your struct:
+Based on this, running `genconfig` will generate [config_gen.go](examples/00-docs/config_gen.go) containing code to populate the struct from env vars. In order to do so, call `LoadConfig()` at the start of the program:
 
 ```go
 package main
@@ -170,13 +42,15 @@ func main() {
 
 Optionally, it can also generate a `.env` file containing all the environment variables that it reads (without setting a value for them):
 
+<!-- sync:begin file=examples/00-docs/.env lang= -->
 ```
-APP_APIKEY=
-APP_LOGLEVEL=
-APP_SERVER_HOST=
-APP_SERVER_PORT=
-APP_SERVER_SHUTDOWNINTERVAL=
+APP_APIKEY=''
+APP_LOGLEVEL=''
+APP_SERVER_HOST=''
+APP_SERVER_PORT=''
+APP_SERVER_SHUTDOWNINTERVAL=''
 ```
+<!-- sync:end -->
 
 ## Installation and Usage
 
